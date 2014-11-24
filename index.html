@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>R. A. T.</title>
+        <style> * { margin: 0px; padding: 0px; overflow: hidden;}</style> 
+    <script id="vertexShader" type="x-shader/x-vertex">
+        varying vec2 f_uv;
+        varying vec3 f_normal;
+        void main() {
+            f_normal = (modelMatrix * vec4(normal, 0.0)).xyz;
+            f_uv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    </script>
+    <script id="fragmentShader" type="x-shader/x-fragment">
+        uniform vec3 color;
+        uniform vec3 backColor;
+        varying vec2 f_uv;
+        varying vec3 f_normal;
+                
+        #ifdef USE_FOG
+            uniform vec3 fogColor;
+            uniform float fogNear;
+            uniform float fogFar;
+            
+            float fogFactorLinear(
+                const float dist,
+                const float start,
+                const float end
+            ) {
+                return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
+            }
+        #endif
+
+        #extension GL_OES_standard_derivatives : enable
+        float edgeFactor(vec2 uv){
+            vec2 d = fwidth(uv);
+            vec2 a3 = smoothstep(vec2(0.0), d*1.5, uv);
+            return clamp(min(a3.x, a3.y),0.0,1.0);
+        }
+        
+        void main() {
+            vec2 uv = f_uv;//mod(f_uv, 1.01);
+            uv.x = 1.0-abs(uv.x*2.0 - 1.0);
+            uv.y = 1.0-abs(uv.y*2.0 - 1.0);
+            
+            vec3 wiresColor = mix(color, backColor, edgeFactor(uv));
+            
+            #ifdef USE_FOG
+                float depth = gl_FragCoord.z / gl_FragCoord.w;
+                gl_FragColor.rgb = mix(wiresColor, fogColor, fogFactorLinear(depth,fogNear,fogFar));
+            #else
+                gl_FragColor.rgb = wiresColor;
+            #endif
+        }
+    </script>
+    </head> 
+    <body> 
+        <script src="js/three.min.js"></script> 
+        <script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/FXAAShader.js"></script>
+		<script src="js/shaders/DigitalGlitch.js"></script>
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/GlitchPass.js"></script>
+        
+        <script src="js/random.js"></script> 
+        <script src="js/shapes.js"></script> 
+        <script src="js/worldgen.js"></script> 
+        <script src="js/PointerLockControls.js"></script> 
+        <script src="js/objects.js"></script> 
+        <script src="js/main.js"></script> 
+    </body>
+</html>
