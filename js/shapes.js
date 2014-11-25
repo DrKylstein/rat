@@ -91,8 +91,7 @@ function makeSprite(tex) {
     return sprite;
 }
 
-var font = new Image();
-font.src = 'gfx/font.png';
+var font = document.getElementById('font');
 
 function makeStaticLabel(text, height, color) {
     var hudCanvas = document.createElement('canvas');

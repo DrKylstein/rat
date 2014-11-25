@@ -20,8 +20,6 @@ var SCREEN_COLORS = [0x00ff00, 0x002200];
 var ENV_COLORS = [0x008800, 0x002200];
 var BUILDING_COLORS = [0x0000ff, 0xff0000, 0x00ff00, 0x00ffff, 0xff00ff, 0xffff00, 0xffffff];
 
-var POST = false;
-
 var camera, cameraOrtho;
 var wsize;
 var renderer = new THREE.WebGLRenderer({antialias:true}); 
@@ -30,14 +28,6 @@ var hudScene = new THREE.Scene();
 renderer.autoClear = false;
 var canvas = renderer.domElement;
 document.body.appendChild(canvas);
-
-dpr = 1;
-if (window.devicePixelRatio !== undefined) {
-  dpr = window.devicePixelRatio;
-}
-var glitchPass;
-var composer = new THREE.EffectComposer(renderer);
-var fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
 
 
 (function initCameras() {
@@ -50,7 +40,6 @@ var fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
     cameraOrtho = new THREE.OrthographicCamera(-(wsize[0])/2, (wsize[0])/2, (wsize[1])/2, -(wsize[1])/2, 1, 10);
     cameraOrtho.position.z = 10;    
     renderer.setSize(width, height);
-    fxaaPass.uniforms.resolution.value.set(1/(width*dpr), 1/(height*dpr));
 })();
 window.onresize = function onWindowResize() {
     var width = window.innerWidth;
@@ -67,32 +56,14 @@ window.onresize = function onWindowResize() {
     cameraOrtho.bottom = - (wsize[1]) / 2;
     cameraOrtho.updateProjectionMatrix();
     
-    fxaaPass.uniforms.resolution.value.set(1/(width*dpr), 1/(height*dpr));
     renderer.setSize(width, height);
-    composer.setSize(width*dpr, height*dpr);
 }
 
-var scenePass = new THREE.RenderPass(scene, camera);
-var hudPass = new THREE.RenderPass(hudScene, cameraOrtho);
-hudPass.clear = false;
-composer.addPass(scenePass);
-composer.addPass(hudPass);
-composer.addPass(fxaaPass);
-glitchPass = new THREE.GlitchPass();
-glitchPass.renderToScreen = true;
-composer.addPass(glitchPass);
-
-
-
 function render() {
-    if(!POST) {
     renderer.clear();
     renderer.render(scene, camera);
     renderer.clearDepth();
     renderer.render(hudScene, cameraOrtho);
-    } else {
-    composer.render();
-    }
 }
 
 scene.fog = new THREE.Fog(ENV_COLORS[1], 1, FAR);
@@ -141,12 +112,52 @@ var eyeKey = {
 var programs = [
     eyeKey,
     {
-        name:'throttle_override.exe',
-        description:['+50% speed']
+        name:'foo.txt',
+        description:[
+            'foo', 
+            'bar',
+            'baz',
+            'frob',
+            '',
+            '',
+            ''
+        ]
     },
     {
-        name:'laser_boost.exe',
-        description:['increase laser power']
+        name:'MCP 1/3',
+        description:[
+            'Restore central control of', 
+            'city systems.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+    },
+    {
+        name:'MCP 2/3',
+        description:[
+            'Restore central control of', 
+            'city systems.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+    },
+    {
+        name:'MCP 3/3',
+        description:[
+            'Restore central control of', 
+            'city systems.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
     }
 ];
 var hackerKey = {
@@ -209,6 +220,30 @@ for(var i = 0; i < rooms.length; i++) {
     });
 }
 
+function spawnGuard(position, patrol) {
+    var shape = makeGuard();
+    shape.body.position.copy(position);
+    moving.push({
+        id:shape.id,
+        body:shape.body,
+        speed:20,
+        face:true,
+        index:0,
+        path:patrol
+    });
+    scene.add(shape.body);
+}
+
+spawnGuard(intersections[-2][-2],
+    [
+        intersections[-2][-2],
+        intersections[-1][-2],
+        intersections[-1][-1],
+        intersections[-2][-1]
+    ]
+);
+
+
 
 (function(){
     var shape = makeRizzo();
@@ -242,7 +277,7 @@ for(var i = 0; i < rooms.length; i++) {
 (function(){
     var shape = makeAnneka();
     var id = shape.body.id;
-
+    shape.body.position.copy(intersections[1][1]);
     scene.add(shape.body);
     var bot = {
         id:id,
@@ -251,7 +286,7 @@ for(var i = 0; i < rooms.length; i++) {
         radius:30/2,
         speed:400.0,
         vspeed:400.0,
-        spawn: intersections[-1][-1],
+        spawn: intersections[1][1],
         resetOwner: true,
         name:'Anneka'
     };
@@ -273,21 +308,21 @@ for(var i = 0; i < rooms.length; i++) {
         index:0,
         device:bot,
         path:[
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[-1][-1]),
-            intersections[-1][-1],
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[-1][-1]),
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[1][1]),
+            intersections[1][1],
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[1][1]),
         
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][-1]),
-            intersections[0][-1],
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][-1]),
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][1]),
+            intersections[0][1],
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][1]),
         
             new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][0]),
             intersections[0][0],
             new THREE.Vector3(0.0,100.0,0.0).add(intersections[0][0]),
             
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[-1][0]),
-            intersections[-1][0],
-            new THREE.Vector3(0.0,100.0,0.0).add(intersections[-1][0])
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[1][0]),
+            intersections[1][0],
+            new THREE.Vector3(0.0,100.0,0.0).add(intersections[1][0])
         ]
     });
     stunnable.push({id:id, body:shape.body});

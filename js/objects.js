@@ -76,6 +76,38 @@ function makeIgor() {
     return {body:root, eye:camera};
 }
 
+function makeGuard() {
+    var root = new THREE.Object3D();
+    
+    var torso = makeBox(7,8,5, 0xff0000, 0x888888);
+    pointify(torso.children[0].geometry, 10, 0.5, 0.5);
+    torso.children[0].rotation.x = Math.PI;
+    root.add(torso);
+    
+    var gun = makeBox(3,3,3, 0xff0000, 0x880000);
+    pointify(gun.children[0].geometry, 3, 0, 1);
+    gun.children[0].rotation.x = Math.PI*1/8;
+    gun.position.z = -2;
+    gun.position.y = 2;
+    root.add(gun);
+    
+    var head = makeBox(7,3,5, 0xff0000, 0x880000);
+    pointify(head.children[0].geometry, 3, 0.5, 0.5);
+    head.position.y = 8;
+    root.add(head);
+
+    var eye = makeBox(2,1,1, 0xffff00, 0x884400);
+    var camera = new THREE.Object3D();
+    eye.position.y = 8+2;
+    eye.position.z = -1.5;
+    camera.position.y = 8+1;
+
+    root.add(eye);
+    root.add(camera);
+    
+    return {body:root, eye:camera};
+}
+
 function Monitor(color, backColor) {
     var monitorCanvas = document.createElement('canvas');
     var monitor = monitorCanvas.getContext('2d');
