@@ -109,20 +109,7 @@ var eyeKey = {
     ]
 };
 
-var programs = [
-    eyeKey,
-    {
-        name:'foo.txt',
-        description:[
-            'foo', 
-            'bar',
-            'baz',
-            'frob',
-            '',
-            '',
-            ''
-        ]
-    },
+var mcp = [
     {
         name:'MCP 1/3',
         description:[
@@ -159,6 +146,25 @@ var programs = [
             ''
         ]
     }
+];
+
+var programs = [
+    eyeKey,
+    {
+        name:'foo.txt',
+        description:[
+            'foo', 
+            'bar',
+            'baz',
+            'frob',
+            '',
+            '',
+            ''
+        ]
+    },
+    mcp[0],
+    mcp[1],
+    mcp[2]
 ];
 var hackerKey = {
     name:'hacker key',
@@ -750,8 +756,21 @@ function handleBotSaveDelete(index) {
             case 1:
                 if(host.contents.length < 4) {
                     host.contents.push(client.contents[index]);
-                    showFiles();
-                    interfaceAction = handleFiles;
+                    
+                    var found = [false,false,false];
+                    host.contents.forEach(function(prg){
+                        var id = mcp.indexOf(prg);
+                        if(id != -1) found[id] = true;
+                    });
+                    if(found.every(function(a){return a})) {
+                        interfaceAction = null;
+                        monitor.clear();
+                        monitor.println('Computer control restored.');
+                        monitor.println('Mission Complete!');
+                    } else {
+                        showFiles();
+                        interfaceAction = handleFiles;
+                    }
                 }
                 break;
             case 2:
