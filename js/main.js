@@ -183,18 +183,21 @@ var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 
 
 (function(){
-    var r = 0;
+    var building = null;
+    var r = -1;
     for(var i = 0; i < rooms.length; i++) {
-        if(rooms[i].userData.x == 0 && rooms[i].userData.z == 0) {
+        if(rooms[i].isStart) {
+            building = rooms[i];
             r = i;
             break;
         }
         
     }
+    var room = building.rooms[building.rooms.length-1];
     var mainframe = makeMainframe();
-    var back = rooms[r].userData.diameter/2 - 5;
+    var back = room.userData.size.z/2 - 5;
     mainframe.position.z -= back;
-    rooms[r].add(mainframe);
+    room.add(mainframe);
     activeDevices.push({
         id:mainframe.id,
         body:mainframe, 
@@ -210,11 +213,12 @@ var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 Random.shuffle(programs);
 Random.shuffle(rooms);
 
-for(var i = 0; i < rooms.length; i++) {
+rooms.forEach(function(building) {
+    var room = building.rooms[building.rooms.length-1];
     var mainframe = makeMainframe();
-    var back = rooms[i].userData.diameter/2 - 5;
+    var back = room.userData.size.z/2 - 5;
     mainframe.position.z -= back;
-    rooms[i].add(mainframe);
+    room.add(mainframe);
     activeDevices.push({
         id:mainframe.id,
         body:mainframe, 
@@ -224,7 +228,7 @@ for(var i = 0; i < rooms.length; i++) {
         hasScreen:true,
         readOnly: 1
     });
-}
+});
 
 function spawnGuard(position, patrol) {
     var shape = makeGuard();

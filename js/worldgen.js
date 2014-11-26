@@ -13,21 +13,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
     
     var world = makeCity(2, 200, 100, 50, 2, 3);
     
-    function makeCity(radius, lotSize, roadSize, alleySize, buildWide, buildDeep) {
-        /*var map = [];
-        for(var z = 1-radius; z < radius; z++) {
-            map.push([])
-            for(var x = 1-radius; x < radius; x++) {
-                map[map.length-1].push(0);
-            }
-        }
-        
-        for(var i = 0; i < 10; i++) {
-            z = Math.floor(Math.random()*map.length);
-            x = Math.floor(Math.random()*map[z].length);
-            map[z][x] = 1;
-        }*/
-        
+    function makeCity(radius, lotSize, roadSize, alleySize, buildWide, buildDeep) {        
         var root = new THREE.Object3D();
         var blockWidth = lotSize*buildWide + roadSize;
         var blockDepth = lotSize*buildDeep + alleySize;
@@ -160,12 +146,10 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
                 root.add(groundFloor);
 
         var interior = makeInterior(diameter-2, color, color & 0x444444);
-        interior.userData.diameter = diameter - 2;
-        interior.userData.x = x;
-        interior.userData.z = z;
-        interior.userData.height = height;
-        rooms.push(interior);
         root.add(interior);
+        
+        var layout = makeInnerLayout(diameter-1, 20 - 0.1, diameter-1, 2, color, color & 0x444444, x == 0 && z == 0);
+        root.add(layout);
         
         var top; 
         if(topHeight > 200) {
@@ -195,7 +179,6 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         
         if(doDoor) {
             var door = makeBox(10, 20, 0.8, 0xff0000, 0x880000);
-            door.name = "door";
             door.position.z = -0.5;
             doors.push(door);
             south.add(door);
@@ -233,12 +216,10 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         return root;
     }
     
-    function makeInteriorWall(length, color, backColor) {
+    function makeInteriorWall(length, height, depth, color, backColor) {
         var root = new THREE.Object3D();
-        var left = makeBox(length/2 - 5, 20, 0.1, color, backColor);
-        var right = makeBox(length/2 - 5, 20, 0.1, color, backColor);
-        //scaleUv(left.children[0].geometry, 4, 1);
-        //scaleUv(right.children[0].geometry, 4, 1);
+        var left = makeBox(length/2 - 5, height, depth, color, backColor);
+        var right = makeBox(length/2 - 5, height, depth, color, backColor);
         left.position.x = -length/4 - 2.5;
         right.position.x = length/4 + 2.5;
         root.add(left);
@@ -251,7 +232,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         var north, south, east, west;
         
         north = makeBox(diameter, 20, 0.1, color, backColor);
-        south = makeInteriorWall(diameter, color, backColor);
+        south = makeInteriorWall(diameter, 20 - 0.1, 0.1, color, backColor);
         east = makeBox(diameter, 20, 0.1, color, backColor);
         west = makeBox(diameter, 20, 0.1, color, backColor);
         
@@ -279,52 +260,111 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         var cieling = makeBox(diameter, 0, diameter, color, backColor);
         cieling.position.y = 20 - 0.1;
         root.add(cieling);
+                
+        return root;
+    }
         
-        var layout = makeInnerLayout(diameter, 20-0.1, diameter, color, backColor);
-        if(Math.random() > 0.5)
-            layout.rotation.y = Math.PI;
-        root.add(layout);
+    function makeInnerLayout(width, height, depth, wallThickness, color, backColor, isStart) {
+        var root = new THREE.Object3D();
+        var areas = flattenDegenerateTree(
+            subdivide(
+                new THREE.Vector2(-width/2,-depth/2), 
+                new THREE.Vector2(width/2, depth/2), 
+                20, 
+                false
+            )
+        ).map(function(corners) {
+            return shrink(wallThickness/2, corners);
+        }).map(cornersToCenterSize);
+        
+        var meta = {isStart:isStart, rooms:[]};
+        
+        areas.forEach(function(area, i){
+            var room = new THREE.Object3D();
+            room.position.x = area.center.x;
+            room.position.z = area.center.y;
+            room.userData.size = new THREE.Vector3(area.size.x, height, area.size.y);
+            room.userData.interiorness = areas.length - i - 1;
+            root.add(room);
+            meta.rooms.push(room);
+            var leftWall = makeBox(wallThickness, height, area.size.y, color, backColor);
+            leftWall.position.x = area.center.x - area.size.x/2 - wallThickness/2;
+            leftWall.position.z = area.center.y;
+            if(leftWall.position.x > -width/2 + wallThickness/2)
+                root.add(leftWall);
+        });
+        
+        rooms.push(meta);
+        
+        for(var i = 1; i < areas.length; i++) {
+            var frontWall = makeInteriorWall(areas[i].size.x + wallThickness, height, wallThickness, color, backColor);
+            frontWall.position.x = areas[i].center.x;
+            frontWall.position.z = areas[i].center.y + areas[i].size.y/2 + wallThickness/2;
+            root.add(frontWall);
+            
+            var door = makeBox(10, height, 0.8, 0xff0000, 0x880000);
+            doors.push(door);
+            frontWall.add(door);
+        }
         
         return root;
     }
     
-    function makeInnerLayout(width, height, depth, color, backColor) {
-        var root = new THREE.Object3D();
-        var backLeftWall = makeBox(width*1/3 - 5, height, 2.5, color, backColor);
-        var backRightWall = makeBox(width*1/3 - 5, height, 2.5, color, backColor);
-        var leftWall = makeBox(2.5,height,depth/3,color,backColor);
-        var rightWall = makeBox(2.5,height,depth/3,color,backColor);
-        backLeftWall.position.z = depth/6 + 1.25 - 2.5;
-        backRightWall.position.z = depth/6 + 1.25 - 2.5;
-        backLeftWall.position.x = -width/4 + 5 + 1.5;
-        backRightWall.position.x = +width/4 - 5 - 1.5;
-        leftWall.position.x = -width/3;
-        rightWall.position.x = width/3
-        leftWall.position.z = depth/2 - depth/6;
-        rightWall.position.z = depth/2 - depth/6;
+    function cornersToCenterSize(obj) {
+        var min, max;
+        min = obj.min;
+        max = obj.max;
+        var size = new THREE.Vector2().subVectors(max, min);
+        var center = new THREE.Vector2().copy(size);
+        center.multiplyScalar(0.5);
+        center.add(min);
+        return {center:center, size:size};
+    }
+    
+    function shrink(amount, corners) {
+        corners.min.x += amount;
+        corners.min.y += amount;
+        corners.max.x -= amount;
+        corners.max.y -= amount;
+        return corners;
+    }
+    
+    function flattenDegenerateTree(tree) {
+        while(Array.isArray(tree[tree.length-1])) {
+            var item = tree.splice(tree.length-1, 1)[0];
+            tree.push(item[0]);
+            tree.push(item[1])
+        }
+        return tree;
+    }
+    
+    function subdivide(min, max, limit, useX) {
+        var root = randSplit(min, max, limit, useX);
         
-        var leftHallWall = makeBox(2.5,height,depth/3 - 5,color,backColor);
-        leftHallWall.position.x = -5 - 2.5;
-        var rightHallWall = makeBox(2.5,height,depth/3 - 5,color,backColor);
-        rightHallWall.position.x = 5 + 2.5;
-
-        var leftBackHallWall = makeBox(2.5,height,depth/4 - 5,color,backColor);
-        leftBackHallWall.position.x = -5 - 2.5;
-        var rightBackHallWall = makeBox(2.5,height,depth/4 - 5,color,backColor);
-        rightBackHallWall.position.x = 5 + 2.5;
-        leftBackHallWall.position.z = -depth/2 + depth/8 - 2.5;
-        rightBackHallWall.position.z = -depth/2 + depth/8 - 2.5;
-
+        useX = !useX;
+        var v = new THREE.Vector2();
+        v.subVectors(root[1].max, root[1].min);
+        if(Math.abs(v.x) < limit*1.5 || Math.abs(v.y) < limit*1.5)
+            return root;
         
-        root.add(backLeftWall);
-        root.add(backRightWall);
-        root.add(leftWall);
-        root.add(rightWall);
-        root.add(leftHallWall);
-        root.add(rightHallWall);
-        root.add(leftBackHallWall);
-        root.add(rightBackHallWall);
+        root[1] = subdivide(root[1].min, root[1].max, limit, useX);
         return root;
+    }
+    
+    function randSplit(min, max, limit, useX) {
+        if(useX) {
+            var x = Random.real(min.x+limit,max.x-limit);
+            return [
+                {min:new THREE.Vector2(x, min.y), max:new THREE.Vector2(max.x, max.y)},
+                {min:new THREE.Vector2(min.x, min.y), max:new THREE.Vector2(x, max.y)}
+            ];
+        } else {
+            var y = Random.real(min.y+limit,max.y-limit);
+            return [
+                {min:new THREE.Vector2(min.x, y), max:new THREE.Vector2(max.x, max.y)},
+                {min:new THREE.Vector2(min.x, min.y), max:new THREE.Vector2(max.x, y)}
+            ];
+        }
     }
     
     function makeTower(width, height, depth, color, backColor) {

@@ -23,8 +23,12 @@ var Random = new (function(){
         return items[Math.floor(Math.random()*items.length)];
     }
 
-    this.integer = function randRange(min,max) {
+    this.integer = function integer(min,max) {
         var size = max - min;
         return Math.floor(Math.random()*size) + min;
+    }
+    this.real = function real(min,max) {
+        var size = max - min;
+        return Math.random()*size + min;
     }
 });
