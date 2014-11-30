@@ -91,7 +91,7 @@ var botId = -1;
     var world = makeWorld(ENV_COLORS, BUILDING_COLORS);
     doors = world.doors;
     city = world.world;
-    rooms = world.rooms;
+    buildings = world.rooms;
     intersections = world.intersections;
     scene.add(city);
 })();
@@ -181,54 +181,67 @@ var hackerKey = {
 
 var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 
-
-(function(){
-    var building = null;
-    var r = -1;
-    for(var i = 0; i < rooms.length; i++) {
-        if(rooms[i].isStart) {
-            building = rooms[i];
-            r = i;
-            break;
-        }
-        
-    }
-    var room = building.rooms[building.rooms.length-1];
-    var mainframe = makeMainframe();
-    var back = room.userData.size.z/2 - 5;
-    mainframe.position.z -= back;
-    room.add(mainframe);
-    activeDevices.push({
-        id:mainframe.id,
-        body:mainframe, 
-        name:"Cyber 1", 
-        contents:[hackerKey], 
-        locked:false,
-        hasScreen:true,
-        readOnly: 1
-    }); 
-    rooms.splice(r,1);
-})();
-
 Random.shuffle(programs);
-Random.shuffle(rooms);
+Random.shuffle(buildings);
 
-rooms.forEach(function(building) {
-    var room = building.rooms[building.rooms.length-1];
-    var mainframe = makeMainframe();
-    var back = room.userData.size.z/2 - 5;
-    mainframe.position.z -= back;
-    room.add(mainframe);
-    activeDevices.push({
-        id:mainframe.id,
-        body:mainframe, 
-        name:"Cyber "+(i+1), 
-        contents:[programs[i%programs.length]], 
-        locked:true,
-        hasScreen:true,
-        readOnly: 1
+buildings.forEach(function(building){
+    building.rooms.forEach(function(room){
+        var light = makeCeilingLight();
+        light.position.y = 20;
+        room.add(light);
     });
 });
+
+buildings.forEach(function(building, i) {
+    var room = Random.choose(building.leafRooms);
+    var mainframe = makeMainframe();
+    var back = room.userData.size.z/2 - 5;
+    mainframe.position.z -= back;
+    room.add(mainframe);
+    
+    if(building.isStart) {
+        activeDevices.push({
+            id:mainframe.id,
+            body:mainframe, 
+            name:"Cyber 1", 
+            contents:[hackerKey], 
+            locked:false,
+            hasScreen:true,
+            readOnly: 1
+        }); 
+    } else {
+        activeDevices.push({
+            id:mainframe.id,
+            body:mainframe, 
+            name:"Cyber "+(i+2), 
+            contents:[programs[i%programs.length]], 
+            locked:true,
+            hasScreen:true,
+            readOnly: 1
+        });
+    }
+    
+    building.rooms.splice(building.rooms.indexOf(room),1);
+    building.leafRooms.splice(building.leafRooms.indexOf(room),1);
+});
+
+buildings.forEach(function(building){
+    building.leafRooms.forEach(function(room){
+        if(room.userData.size.x >= 20 && room.userData.size.z >= 20) {
+            var table = makeTable();
+            table.position.z = -room.userData.size.z/2 + 10/2;
+            room.add(table);
+        }
+        building.rooms.splice(building.rooms.indexOf(room),1);
+    });
+    building.rooms.forEach(function(room){
+        if(room.userData.size.x >= 40 && room.userData.size.z >= 30) {
+            var table = makeTable();
+            room.add(table);
+        }
+    });
+});
+
 
 function spawnGuard(position, patrol) {
     var shape = makeGuard();

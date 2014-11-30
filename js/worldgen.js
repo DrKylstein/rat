@@ -266,7 +266,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         
     function makeInnerLayout(width, height, depth, wallThickness, color, backColor, isStart) {
         var root = new THREE.Object3D();
-        var areas = flattenDegenerateTree(
+        var bounds = flattenDegenerateTree(
             subdivide(
                 new THREE.Vector2(-width/2,-depth/2), 
                 new THREE.Vector2(width/2, depth/2), 
@@ -275,16 +275,22 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             )
         ).map(function(corners) {
             return shrink(wallThickness/2, corners);
-        }).map(cornersToCenterSize);
+        });
+        areas = bounds.map(cornersToCenterSize);
         
-        var meta = {isStart:isStart, rooms:[]};
+        var backmostPos = 5000;
+        bounds.forEach(function(bound) {
+            backmostPos = Math.min(bound.min.y,backmostPos);
+        });
+        
+        var meta = {isStart:isStart, rooms:[], leafRooms:[]};
         
         areas.forEach(function(area, i){
             var room = new THREE.Object3D();
             room.position.x = area.center.x;
             room.position.z = area.center.y;
             room.userData.size = new THREE.Vector3(area.size.x, height, area.size.y);
-            room.userData.interiorness = areas.length - i - 1;
+            if(bounds[i].min.y <= backmostPos) meta.leafRooms.push(room);
             root.add(room);
             meta.rooms.push(room);
             var leftWall = makeBox(wallThickness, height, area.size.y, color, backColor);
@@ -341,13 +347,16 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
     function subdivide(min, max, limit, useX) {
         var root = randSplit(min, max, limit, useX);
         
+        var subtree = 1;
+        //if(useX && Math.random() > 0.5) subtree = 0;
+        
         useX = !useX;
         var v = new THREE.Vector2();
-        v.subVectors(root[1].max, root[1].min);
+        v.subVectors(root[subtree].max, root[subtree].min);
         if(Math.abs(v.x) < limit*1.5 || Math.abs(v.y) < limit*1.5)
             return root;
         
-        root[1] = subdivide(root[1].min, root[1].max, limit, useX);
+        root[1] = subdivide(root[subtree].min, root[subtree].max, limit, useX);
         return root;
     }
     

@@ -186,3 +186,42 @@ function makeMainframe() {
     
     return root;
 }
+
+function makeTable() {
+    var root = new THREE.Object3D();
+    
+    var top = makeBox(20,1,10, 0xff00ff, 0x880088);
+    top.position.y = 5;
+    root.add(top);
+    
+    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    leg.position.set(-20/2 + 1/2, 0, -10/2 + 1/2);
+    root.add(leg);
+    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    leg.position.set(20/2 - 1/2, 0, 10/2 - 1/2);
+    root.add(leg);
+    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    leg.position.set(-20/2 + 1/2, 0, 10/2 - 1/2);
+    root.add(leg);
+    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    leg.position.set(20/2 - 1/2, 0, -10/2 + 1/2);
+    root.add(leg);
+    
+    return root;
+}
+
+function makeCeilingLight() {
+    var root = new THREE.Object3D();
+    
+    var top = makeBox(5,2,5, 0x0000ff, 0x000088);
+    top.position.y = -2;
+    root.add(top);
+    
+    pointify(top.children[0].geometry, 2, 0.5, 0.5);
+    
+    var diffuser = makeBox(5, 0.1, 5, 0xffffff, 0xffffff);
+    diffuser.position.y = -2 - 0.1;
+    root.add(diffuser);
+    
+    return root;
+}
