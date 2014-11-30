@@ -69,7 +69,7 @@ function render() {
 scene.fog = new THREE.Fog(ENV_COLORS[1], 1, FAR);
 renderer.setClearColor(ENV_COLORS[1],1);
 
-var doors, rooms, intersections, city;
+var doors, rooms, intersections, city, portalDoors, wallBoxes;
 var spinners = [];
 var fallers = [];
 var moving = [];
@@ -93,6 +93,8 @@ var botId = -1;
     city = world.world;
     buildings = world.rooms;
     intersections = world.intersections;
+    portalDoors = world.portalDoors;
+    wallBoxes = world.wallBoxes;
     scene.add(city);
 })();
 
@@ -841,8 +843,16 @@ function update(time) {
         scene.add(item.body);
     });
         
+    portalDoors.forEach(function(portal){
+        v.copy(bot.body.position);
+        portal.door.worldToLocal(v);
+        var interior = portal.inside;
+        var size = portal.size;
+        interior.visible = (v.z < 0 && v.z > -size.y && 
+            v.x > -size.x/2 && v.x < size.x/2) || portal.door.position.x > 0;
+    });
 
-    if(controls.enabled) {
+    if(controls.enabled || time == 0) {
         if(activeDevices.every(function(device){
             if(device === client) return true;
             v.set(0,0,0);
@@ -904,9 +914,9 @@ function update(time) {
         });
         
         doors.forEach(function(door){
-            v.set(0,0,0);
-            door.localToWorld(v);
-            if(v.distanceTo(controls.getObject().position) < 20) {
+            v.copy(bot.body.position);
+            door.worldToLocal(v);            
+            if(v.length() < 20) {
                 if(door.position.x < 9) {
                     door.position.x += 25*delta;
                 }
@@ -1008,11 +1018,23 @@ function update(time) {
             scene.remove(proj.body);
         });
         
+        /*wallBoxes.forEach(function(box){            
+            if(
+                bot.body.position.x > box.min.x - bot.radius && 
+                bot.body.position.x < box.min.x + bot.radius && 
+                bot.body.position.z > box.min.z - bot.radius &&
+                bot.body.position.z < box.max.z + bot.radius
+            ) {
+                bot.body.position.x = box.min.x - bot.radius;
+            } 
+        });*/
+        
         raycaster.far = bot.radius+1;
         raycaster.near = bot.radius;
         controls.getDirection(v);
         v.applyEuler(START_ANG);
         controls.objectInFront = false;
+        
         for(var i = 0; i < 4; i++) {
             raycaster.set(eyePos, v);
             controls.objectInFront = controls.objectInFront || (raycaster.intersectObject(scene, true).length > 0);
