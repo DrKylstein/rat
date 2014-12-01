@@ -32,7 +32,7 @@ THREE.PointerLockControls = function (camera, body, eye) {
 	this.objectOnLeft = false;
 	this.objectOnRight = false;
 
-	var velocity = new THREE.Vector3();
+	this.velocity = new THREE.Vector3();
 
 	var PI_2 = Math.PI / 2;
 
@@ -183,29 +183,29 @@ THREE.PointerLockControls = function (camera, body, eye) {
 
 		if ( scope.enabled === false ) return;
 
-		velocity.x -= velocity.x * 10.0 * delta;
-		velocity.z -= velocity.z * 10.0 * delta;
-		velocity.y -= velocity.y * 10.0 * delta;
+		this.velocity.x -= this.velocity.x * 10.0 * delta;
+		this.velocity.z -= this.velocity.z * 10.0 * delta;
+		this.velocity.y -= this.velocity.y * 10.0 * delta;
 		
-		if ( velocity.z < 0 && this.objectInFront) velocity.z = 0;
-		if ( velocity.z > 0 && this.objectInBack ) velocity.z = 0;
-		if ( velocity.x < 0 && this.objectOnLeft) velocity.x = 0;
-		if ( velocity.x > 0 && this.objectOnRight) velocity.x = 0;
-
-		
-		if ( moveForward && !this.objectInFront) velocity.z -= speed * delta;
-		if ( moveBackward && !this.objectInBack ) velocity.z += speed * delta;
-		if ( moveLeft && !this.objectOnLeft) velocity.x -= speed * delta;
-		if ( moveRight && !this.objectOnRight) velocity.x += speed * delta;
-
-
-		if (moveDown) velocity.y -= vspeed * delta;
-		if (moveUp) velocity.y += vspeed * delta;
+		if ( this.velocity.z < 0 && this.objectInFront) this.velocity.z = 0;
+		if ( this.velocity.z > 0 && this.objectInBack ) this.velocity.z = 0;
+		if ( this.velocity.x < 0 && this.objectOnLeft) this.velocity.x = 0;
+		if ( this.velocity.x > 0 && this.objectOnRight) this.velocity.x = 0;
 
 		
-		yawObject.translateX( velocity.x * delta );
-		yawObject.translateY( velocity.y * delta ); 
-		yawObject.translateZ( velocity.z * delta );
+		if ( moveForward && !this.objectInFront) this.velocity.z -= speed * delta;
+		if ( moveBackward && !this.objectInBack ) this.velocity.z += speed * delta;
+		if ( moveLeft && !this.objectOnLeft) this.velocity.x -= speed * delta;
+		if ( moveRight && !this.objectOnRight) this.velocity.x += speed * delta;
+
+
+		if (moveDown) this.velocity.y -= vspeed * delta;
+		if (moveUp) this.velocity.y += vspeed * delta;
+
+		
+		yawObject.translateX( this.velocity.x * delta );
+		yawObject.translateY( this.velocity.y * delta ); 
+		yawObject.translateZ( this.velocity.z * delta );
 	};
 
 };

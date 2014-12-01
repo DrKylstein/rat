@@ -69,7 +69,7 @@ function render() {
 scene.fog = new THREE.Fog(ENV_COLORS[1], 1, FAR);
 renderer.setClearColor(ENV_COLORS[1],1);
 
-var doors, rooms, intersections, city, portalDoors, wallBoxes;
+var doors, buildings, intersections, city, portalDoors, wallObjects;
 var spinners = [];
 var fallers = [];
 var moving = [];
@@ -94,7 +94,7 @@ var botId = -1;
     buildings = world.rooms;
     intersections = world.intersections;
     portalDoors = world.portalDoors;
-    wallBoxes = world.wallBoxes;
+    wallObjects = world.wallObjects;
     scene.add(city);
 })();
 
@@ -200,6 +200,7 @@ buildings.forEach(function(building, i) {
     var back = room.userData.size.z/2 - 5;
     mainframe.position.z -= back;
     room.add(mainframe);
+    wallObjects.push(mainframe);
     
     if(building.isStart) {
         activeDevices.push({
@@ -232,6 +233,7 @@ buildings.forEach(function(building){
         if(room.userData.size.x >= 20 && room.userData.size.z >= 20) {
             var table = makeTable();
             table.position.z = -room.userData.size.z/2 + 10/2;
+            wallObjects.push(table);
             room.add(table);
         }
         building.rooms.splice(building.rooms.indexOf(room),1);
@@ -239,6 +241,7 @@ buildings.forEach(function(building){
     building.rooms.forEach(function(room){
         if(room.userData.size.x >= 40 && room.userData.size.z >= 30) {
             var table = makeTable();
+            wallObjects.push(table);
             room.add(table);
         }
     });
@@ -279,7 +282,7 @@ spawnGuard(intersections[-2][-2],
         id:id,
         body:shape.body, 
         eye:shape.eye, 
-        radius:9/2, 
+        radius:3, 
         canShoot:true,
         speed:400.0,
         vspeed:0.0,
@@ -366,7 +369,7 @@ spawnGuard(intersections[-2][-2],
         id:id,
         body:shape.body,
         eye:shape.eye,
-        radius:10/2,
+        radius:4,
         hacker:true,
         speed:200.0,
         vspeed:0.0,
@@ -818,13 +821,13 @@ var UP = new THREE.Vector3(0,1,0);
 var START_ANG = new THREE.Euler( 0, -Math.PI/4, 0, "YXZ" ); 
 var REF_HEADING = new THREE.Vector3(0,0,1);
 var interfaceAction = null;
-
+var  wallBoxes = [];
 function update(time) {
     var delta = Math.min(( time - prevTime ) / 1000, 0.05);
     var botPos = bot.body.position;
     var eyePos = botPos.clone();
     eyePos.y += 5;
-    
+        
     fallers.forEach(function(item) {
         scene.remove(item.body);
         var testPos = item.body.position.clone();
@@ -1018,17 +1021,28 @@ function update(time) {
             scene.remove(proj.body);
         });
         
-        /*wallBoxes.forEach(function(box){            
-            if(
-                bot.body.position.x > box.min.x - bot.radius && 
-                bot.body.position.x < box.min.x + bot.radius && 
-                bot.body.position.z > box.min.z - bot.radius &&
-                bot.body.position.z < box.max.z + bot.radius
-            ) {
-                bot.body.position.x = box.min.x - bot.radius;
-            } 
-        });*/
-        
+        var botbox = new THREE.Box3(
+            new THREE.Vector3(bot.body.position.x-bot.radius, bot.body.position.y-bot.radius, bot.body.position.z-bot.radius),
+            new THREE.Vector3(bot.body.position.x+bot.radius, bot.body.position.y+bot.radius, bot.body.position.z+bot.radius)
+        );
+        crosshair.visible = true;
+        wallBoxes.forEach(function(box){            
+            if(box.isIntersectionBox(botbox)) {
+                if(botbox.max.x > box.min.x && botbox.min.x < box.min.x) {
+                    bot.body.position.x = box.min.x - bot.radius;
+                }
+                if(botbox.min.x < box.max.x && botbox.max.x > box.max.x) {
+                    bot.body.position.x = box.max.x + bot.radius;
+                }
+                if(botbox.max.z > box.min.z && botbox.min.z < box.min.z) {
+                    bot.body.position.z = box.min.z - bot.radius;
+                }
+                if(botbox.min.z < box.max.z && botbox.max.z > box.max.z) {
+                    bot.body.position.z = box.max.z + bot.radius;
+                }
+            }
+        });
+        /*
         raycaster.far = bot.radius+1;
         raycaster.near = bot.radius;
         controls.getDirection(v);
@@ -1057,7 +1071,7 @@ function update(time) {
             raycaster.set(eyePos, v);
             controls.objectOnRight = controls.objectOnRight || (raycaster.intersectObject(scene, true).length > 0);
             v.applyEuler(rotation);
-        }
+        }*/
             
         controls.update(delta);
 
@@ -1112,6 +1126,19 @@ function update(time) {
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
     render();
+    
+    if(time == 0) {
+        wallBoxes = wallObjects.map(function(wall){
+            wall.updateMatrixWorld();
+            var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
+            bbox.update();
+            scene.add(bbox);
+            var box = new THREE.Box3();
+            box.setFromObject(wall);
+            return box;
+        });
+    }
+
     
     prevTime = time;
     requestAnimationFrame(update);
