@@ -1025,19 +1025,26 @@ function update(time) {
             new THREE.Vector3(bot.body.position.x-bot.radius, bot.body.position.y-bot.radius, bot.body.position.z-bot.radius),
             new THREE.Vector3(bot.body.position.x+bot.radius, bot.body.position.y+bot.radius, bot.body.position.z+bot.radius)
         );
-        crosshair.visible = true;
-        wallBoxes.forEach(function(box){            
+        wallBoxes.forEach(function(box){
             if(box.isIntersectionBox(botbox)) {
-                if(botbox.max.x > box.min.x && botbox.min.x < box.min.x) {
+                var ld = botbox.max.x - box.min.x; //+ if intersecting
+                var rd = box.max.x - botbox.min.x; //+ if intersecting
+                var md = botbox.max.z - box.min.z; //+ if intersecting
+                var pd = box.max.z - botbox.min.z; //+ if intersecting
+                if(ld < 0) ld = Number.POSITIVE_INFINITY;
+                if(rd < 0) ld = Number.POSITIVE_INFINITY;
+                if(md < 0) ld = Number.POSITIVE_INFINITY;
+                if(pd < 0) ld = Number.POSITIVE_INFINITY;
+                if(ld < rd && ld < md && ld < pd) {
                     bot.body.position.x = box.min.x - bot.radius;
                 }
-                if(botbox.min.x < box.max.x && botbox.max.x > box.max.x) {
+                if(rd < ld && rd < pd && rd < md) {
                     bot.body.position.x = box.max.x + bot.radius;
                 }
-                if(botbox.max.z > box.min.z && botbox.min.z < box.min.z) {
+                if(md < pd && md < ld && md < rd) {
                     bot.body.position.z = box.min.z - bot.radius;
                 }
-                if(botbox.min.z < box.max.z && botbox.max.z > box.max.z) {
+                if(pd < md && pd < ld && pd < rd) {
                     bot.body.position.z = box.max.z + bot.radius;
                 }
             }
