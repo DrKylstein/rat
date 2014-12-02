@@ -31,6 +31,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         scaleUv(pavement.children[0].geometry, blockWidth/2, blockDepth/2);
         pavement.position.y = -20;
         root.add(pavement);
+        wallObjects.push(pavement);
         
         
         for(var z = 1-radius; z < radius; z++) {
@@ -61,6 +62,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         sidewalk.position.x = (sz[0] - lotSize)/2;
         sidewalk.position.z = (sz[1] - lotSize)/2;
         root.add(sidewalk);
+        wallObjects.push(sidewalk);
         
         var lamp = makeLamp();
         lamp.position.y = 3;

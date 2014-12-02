@@ -96,7 +96,7 @@ renderer.setClearColor(ENV_COLORS[1],1);
 
 var doors, buildings, intersections, city, portalDoors, wallObjects;
 var spinners = [];
-var fallers = [];
+var colliders = [];
 var pathFollowers = [];
 var stopped = [];
 var stunnable = [];
@@ -219,6 +219,8 @@ buildings.forEach(function(building){
     });
 });
 
+var startRoom;
+
 buildings.forEach(function(building, i) {
     var room = Random.choose(building.leafRooms);
     var mainframe = makeMainframe();
@@ -237,6 +239,11 @@ buildings.forEach(function(building, i) {
             hasScreen:true,
             readOnly: 1
         }); 
+        startRoom = Random.choose(building.rooms.filter(function(r2){
+            return r2.id != room.id;
+        }));
+        building.rooms.splice(building.rooms.indexOf(startRoom), 1);
+        building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
     } else {
         terminals.push({
             id:mainframe.id,
@@ -296,22 +303,23 @@ spawnGuard(intersections[-2][-2],
     ]
 );
 
-
-
+var startPos = new THREE.Vector3(0,0,0);
+//startRoom.localToWorld(startPos);
 (function(){
     var shape = makeRizzo();
     var id = shape.body.id;
 
+    shape.body.position.copy(startPos);
     scene.add(shape.body);
     var bot = {
         id:id,
         body:shape.body, 
         eye:shape.eye, 
-        radius:3, 
+        radius:3, //used for shooting, should move
         canShoot:true,
         speed:400.0,
         vspeed:0.0,
-        spawn: new THREE.Vector3(0,0,0),
+        spawn: startPos,
         name:'Rizzo'
     };
     var device = {
@@ -324,7 +332,13 @@ spawnGuard(intersections[-2][-2],
     };
     terminals.push(device);
     bots.push(bot);
-    fallers.push({id:id, body:shape.body,dy:0});
+    colliders.push({
+        id:id, 
+        body:shape.body,
+        radius:3,
+        g:9.8,
+        dy:0
+    });
 })();
 
 (function(){
@@ -336,13 +350,19 @@ spawnGuard(intersections[-2][-2],
         id:id,
         body:shape.body, 
         eye:shape.eye,
-        radius:30/2,
         speed:400.0,
         vspeed:400.0,
         spawn: intersections[1][1],
         resetOwner: true,
         name:'Anneka'
     };
+    colliders.push({
+        id:id, 
+        body:shape.body,
+        radius:30/2,
+        g:0,
+        dy:0
+    });
     var device = {
         id:id,
         name:'Anneka', 
@@ -394,7 +414,6 @@ spawnGuard(intersections[-2][-2],
         id:id,
         body:shape.body,
         eye:shape.eye,
-        radius:4,
         hacker:true,
         speed:200.0,
         vspeed:0.0,
@@ -430,7 +449,13 @@ spawnGuard(intersections[-2][-2],
     potentialTerminals.push(device);
     //terminals.push(bot);
     //bots.push(bot);
-    fallers.push({id:id, body:shape.body,dy:0});
+    colliders.push({
+        id:id, 
+        body:shape.body,
+        radius:4,
+        g:9.8,
+        dy:0
+    });
 })();
 
 var controls = new THREE.PointerLockControls(camera, bots[0].body, bots[0].eye);
@@ -840,29 +865,11 @@ var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
 var DOWN = new THREE.Vector3(0,-1,0);
 var interfaceAction = null;
-var  wallBoxes = [];
+var  obstacles = [];
+var botbox = new THREE.Box3();
 function update(time) {
     var delta = Math.min(( time - prevTime ) / 1000, 0.05);
-    
-    //gravity
-    fallers.forEach(function(item) {
-        scene.remove(item.body);
-        var testPos = item.body.position.clone();
-        testPos.y += 5;
-        raycaster.set(testPos, DOWN);
-        raycaster.near = 0;
-        raycaster.far = 5;
-        var hit = raycaster.intersectObject(scene, true);
-        if(hit.length > 0) {
-            item.body.position.y = hit[0].point.y;
-            item.dy = 0;
-        } else {
-            item.dy -= 9.8 * 10.0 * delta;
-            item.body.position.y += item.dy * delta;
-        }
-        scene.add(item.body);
-    });
-    
+        
     //culling
     portalDoors.forEach(function(portal){
         v.copy(bot.body.position);
@@ -879,7 +886,7 @@ function update(time) {
             if(device === client) return true;
             v.set(0,0,0);
             device.body.localToWorld(v);
-            if(v.distanceTo(bot.body.position) < bot.radius+15) {
+            if(v.distanceTo(bot.body.position) < 20) {
                 if(host === device) {
                 } else {
                     host = device;
@@ -930,9 +937,11 @@ function update(time) {
             }
         }
 
+        
         spinners.forEach(function(item){
             item.rotation.y = Math.PI*time/500;
         });
+        
         
         doors.forEach(function(door){
             v.copy(bot.body.position);
@@ -954,6 +963,7 @@ function update(time) {
             }
         });
         
+        
         pathFollowers.forEach(function(mover){
             if(mover.body.position.distanceTo(mover.path[mover.index]) < 1) {
                 mover.index = (mover.index+1) % mover.path.length;
@@ -970,6 +980,7 @@ function update(time) {
             v.multiplyScalar(mover.speed*delta);
             mover.body.position.add(v);
         });
+        
         
         //stunned bots
         stunned.forEach(function(stunned){
@@ -990,6 +1001,7 @@ function update(time) {
                 potentialTerminals.push(foundDevice.obj);
             }
         });
+        
         
         //projectiles
         var deadProjectiles = [];
@@ -1040,43 +1052,60 @@ function update(time) {
             scene.remove(proj.body);
         });
         
-        //player collsion
-        var botbox = new THREE.Box3(
-            new THREE.Vector3(bot.body.position.x-bot.radius, bot.body.position.y-bot.radius, bot.body.position.z-bot.radius),
-            new THREE.Vector3(bot.body.position.x+bot.radius, bot.body.position.y+bot.radius, bot.body.position.z+bot.radius)
-        );
-        wallBoxes.forEach(function(box){
-            if(box.isIntersectionBox(botbox)) {
-                var ld = botbox.max.x - box.min.x; //+ if intersecting
-                var rd = box.max.x - botbox.min.x; //+ if intersecting
-                var md = botbox.max.z - box.min.z; //+ if intersecting
-                var pd = box.max.z - botbox.min.z; //+ if intersecting
-                if(ld <= 0) ld = Number.POSITIVE_INFINITY;
-                if(rd <= 0) rd = Number.POSITIVE_INFINITY;
-                if(md <= 0) md = Number.POSITIVE_INFINITY;
-                if(pd <= 0) pd = Number.POSITIVE_INFINITY;
-                if(ld < rd && ld < md && ld < pd) {
-                    bot.body.position.x = box.min.x - bot.radius - 0.1;
-                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
+        
+        //collsion
+        colliders.forEach(function(obj){ 
+            obj.dy -= obj.g*10.0*delta;
+            botbox.min.set(obj.body.position.x-obj.radius, obj.body.position.y, obj.body.position.z-obj.radius);
+            botbox.max.set(obj.body.position.x+obj.radius, obj.body.position.y+obj.radius, obj.body.position.z+obj.radius);
+            obstacles.forEach(function(box){
+                if(box.isIntersectionBox(botbox)) {
+                    var bd = botbox.max.y - box.min.y; //+ if intersecting
+                    var td = box.max.y - botbox.min.y; //+ if intersecting
+                    var ld = botbox.max.x - box.min.x; //+ if intersecting
+                    var rd = box.max.x - botbox.min.x; //+ if intersecting
+                    var md = botbox.max.z - box.min.z; //+ if intersecting
+                    var pd = box.max.z - botbox.min.z; //+ if intersecting
+                    if(bd < 0) bd = Number.POSITIVE_INFINITY;
+                    if(td < 0) td = Number.POSITIVE_INFINITY;
+                    if(ld < 0) ld = Number.POSITIVE_INFINITY;
+                    if(rd < 0) rd = Number.POSITIVE_INFINITY;
+                    if(md < 0) md = Number.POSITIVE_INFINITY;
+                    if(pd < 0) pd = Number.POSITIVE_INFINITY;
+                    
+                    td -= 5; //stair step factor
+                    
+                    if(ld < rd && ld < md && ld < pd && ld < td && ld < bd) {
+                        obj.body.position.x = box.min.x - obj.radius - 0.1;
+                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                    }
+                    if(rd < ld && rd < pd && rd < md && rd < td && rd < bd) {
+                        obj.body.position.x = box.max.x + obj.radius + 0.1;
+                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                    }
+                    if(md < pd && md < ld && md < rd && md < td && md < bd) {
+                        obj.body.position.z = box.min.z - obj.radius - 0.1;
+                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                    }
+                    if(pd < md && pd < ld && pd < rd && pd < td && pd < bd) {
+                        obj.body.position.z = box.max.z + obj.radius + 0.1;
+                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                    }
+                    if(bd < pd && bd < ld && bd < rd && bd < td && bd < md) {
+                        obj.body.position.y = box.min.y - obj.radius;
+                    }
+                    if(td < md && td < ld && td < rd && td < pd && td < bd) {
+                        obj.body.position.y = box.max.y;
+                        obj.dy = 0;
+                    }
                 }
-                if(rd < ld && rd < pd && rd < md) {
-                    bot.body.position.x = box.max.x + bot.radius + 0.1;
-                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
-                }
-                if(md < pd && md < ld && md < rd) {
-                    bot.body.position.z = box.min.z - bot.radius - 0.1;
-                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
-                }
-                if(pd < md && pd < ld && pd < rd) {
-                    bot.body.position.z = box.max.z + bot.radius + 0.1;
-                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
-                }
-            }
+            });
         });
-
+        
         //gun cooldown
         if(cooldown > 0)
             cooldown -= delta;
+        
         
         //radiation damge
         var radiation = Math.floor(Math.max(bot.body.position.lengthManhattan() - 800, 0)/100);
@@ -1100,12 +1129,14 @@ function update(time) {
             }
         }
         
+        
         //repair
         if(bot.damage) {
             damageBar.set(bot.damage);
         } else {
             damageBar.set(0);
         }
+        
         
         //die and respawn
         if((bot.damage && bot.damage > 10) || bot.body.position.y < -5) {
@@ -1133,6 +1164,7 @@ function update(time) {
         controls.update(delta);
     }
     
+    
     //visual effects
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
@@ -1140,11 +1172,13 @@ function update(time) {
         noiseLevel = Math.max(0,noiseLevel - 1.0*delta);
     }
     
+    
     render(time);
     
-    //bounding boxes don't get updated until first render for some reason
+    
+    //wolrd transforms don't get updated until first render for some reason
     if(time == 0) {
-        wallBoxes = wallObjects.map(function(wall){
+        obstacles = wallObjects.map(function(wall){
             //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
             //bbox.update();
             //scene.add(bbox);
@@ -1152,7 +1186,12 @@ function update(time) {
             box.setFromObject(wall);
             return box;
         });
+        startPos.set(0,0,0);
+        startRoom.localToWorld(startPos);
+        bots[0].body.position.copy(startPos);
+        render(time);
     }
+    
     
     prevTime = time;
     requestAnimationFrame(update);
