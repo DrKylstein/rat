@@ -836,7 +836,6 @@ function handleBotSaveDelete(index) {
 
 
 var v = new THREE.Vector3(0,0,0);
-var m = new THREE.Matrix4();
 var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
 var DOWN = new THREE.Vector3(0,-1,0);
