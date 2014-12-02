@@ -309,6 +309,8 @@ var startPos = new THREE.Vector3(0,0,0);
     var shape = makeRizzo();
     var id = shape.body.id;
 
+    var nick = Random.choose(['Rizzo', 'Chuckie', 'Jerry']);
+    
     shape.body.position.copy(startPos);
     scene.add(shape.body);
     var bot = {
@@ -320,11 +322,12 @@ var startPos = new THREE.Vector3(0,0,0);
         speed:400.0,
         vspeed:0.0,
         spawn: startPos,
-        name:'Rizzo'
+        name:'R.A.T.',
+        nick:nick
     };
     var device = {
         id:id,
-        name:'Rizzo', 
+        name:nick, 
         body:shape.body, 
         contents:[],
         locked:false,
@@ -346,6 +349,7 @@ var startPos = new THREE.Vector3(0,0,0);
     var id = shape.body.id;
     shape.body.position.copy(intersections[1][1]);
     scene.add(shape.body);
+    var nick = ['Amelia', 'Kiki', 'Anneka', 'Glenda'];
     var bot = {
         id:id,
         body:shape.body, 
@@ -354,7 +358,8 @@ var startPos = new THREE.Vector3(0,0,0);
         vspeed:400.0,
         spawn: intersections[1][1],
         resetOwner: true,
-        name:'Anneka'
+        name:'Flying Eye',
+        nick:nick
     };
     colliders.push({
         id:id, 
@@ -365,7 +370,7 @@ var startPos = new THREE.Vector3(0,0,0);
     });
     var device = {
         id:id,
-        name:'Anneka', 
+        name:nick, 
         body:shape.body, 
         contents:[], 
         locked:true, 
@@ -400,13 +405,13 @@ var startPos = new THREE.Vector3(0,0,0);
     });
     stunnable.push({id:id, body:shape.body});
     potentialTerminals.push(device);
-    //terminals.push(bot);
-    //bots.push(bot);
 })();
 
 (function(){
     var shape = makeIgor();
     var id = shape.body.id;
+    
+    var nick = Random.choose(['Conky', 'Igor', 'Data']);
     
     scene.add(shape.body);
     shape.body.position.copy(intersections[-1][-1]);
@@ -419,11 +424,12 @@ var startPos = new THREE.Vector3(0,0,0);
         vspeed:0.0,
         spawn:intersections[-1][-1],
         resetOwner: true,
-        name:'Igor'
+        name:'Hacker',
+        nick:nick
     };
     var device = {
         id:id,
-        name:'Igor', 
+        name:nick, 
         body:shape.body, 
         contents:[], 
         locked:true, 
@@ -447,8 +453,6 @@ var startPos = new THREE.Vector3(0,0,0);
     })
     stunnable.push({id:id, body:shape.body});
     potentialTerminals.push(device);
-    //terminals.push(bot);
-    //bots.push(bot);
     colliders.push({
         id:id, 
         body:shape.body,
@@ -619,9 +623,15 @@ function Bar(height, lineWidth, spacing, length) {
     }
 }
 
-var damageBar = new Bar(0.05, 0.01, 0.01, 10);
+var BIG_LABEL = 0.05;
+var SMALL_LABEL = 0.04;
+var VSPACE = 0.015;
+var BAR_H = 0.05;
+var BAR_Y = -0.5 + VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
+
+var damageBar = new Bar(BAR_H, 0.01, 0.01, 10);
 hudScene.add(damageBar.display);
-damageBar.display.position.set(0.5 - 0.10, -0.5 + 0.15 - 0.025, 1);
+damageBar.display.position.set(0.5 - 0.10, BAR_Y, 1);
 damageBar.display.rotation.y = Math.PI;
 var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
     new THREE.Vector3(-0.5, 0.5, 0.0),
@@ -629,15 +639,15 @@ var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
     new THREE.Vector3(0.0, -0.5, 0.0),
     new THREE.Vector3(-0.5, 0.5, 0.0)
 ]);
-damageSymbol.position.set(0.5 - 0.05, -0.5 + 0.15, 1.0);
-damageSymbol.scale.set(0.05, 0.05, 1.0);
+damageSymbol.position.set(0.5 - 0.05, BAR_Y, 1.0);
+damageSymbol.scale.set(BAR_H, BAR_H, 1.0);
 hudScene.add(damageSymbol);
 damageBar.set(0);
 
 
-var radBar = new Bar(0.05, 0.01, 0.01, 10);
+var radBar = new Bar(BAR_H, 0.01, 0.01, 10);
 hudScene.add(radBar.display);
-radBar.display.position.set(-0.5 + 0.10,  -0.5 + 0.15 - 0.025, 1);
+radBar.display.position.set(-0.5 + 0.10, BAR_Y, 1);
 var radSymbol = new THREE.Object3D();
 for(var i= 0; i < 3; i++) {
     var foil = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
@@ -649,8 +659,8 @@ for(var i= 0; i < 3; i++) {
     foil.rotation.z = Math.PI*2*i/3;
     radSymbol.add(foil);
 }
-radSymbol.position.set(-0.5 + 0.05,  -0.5 + 0.15, 1.0);
-radSymbol.scale.set(0.05, 0.05, 1.0);
+radSymbol.position.set(-0.5 + 0.05,  BAR_Y, 1.0);
+radSymbol.scale.set(BAR_H, BAR_H, 1.0);
 hudScene.add(radSymbol);
 radBar.set(0);
 
@@ -669,11 +679,12 @@ var terminalEmulator = new THREE.Object3D();
     hudScene.add(terminalEmulator);
 })();
 
+
 var rampakLabels = [];
 for(var i = 0; i < 4; i++) {
-    rampakLabels.push(new Label(0.05,SCREEN_COLORS[0]));
+    rampakLabels.push(new Label(BIG_LABEL,SCREEN_COLORS[0]));
     rampakLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
-    rampakLabels[i].sprite.position.y = -0.5 + 0.05;
+    rampakLabels[i].sprite.position.y = -0.5 + VSPACE + BIG_LABEL/2;
     rampakLabels[i].setText('Empty');
     hudScene.add(rampakLabels[i].sprite);
 }
@@ -687,20 +698,30 @@ function updateRampaks() {
 }
 
 var botLabels = [];
+var botSubLabels = [];
 for(var i = 0; i < 4; i++) {
-    botLabels.push(new Label(0.05,SCREEN_COLORS[0]));
+    botLabels.push(new Label(BIG_LABEL,SCREEN_COLORS[0]));
     botLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
-    botLabels[i].sprite.position.y = 0.5 - 0.05;
+    botLabels[i].sprite.position.y = 0.5 - VSPACE - BIG_LABEL/2;
     botLabels[i].setText('');
     hudScene.add(botLabels[i].sprite);
+    
+    botSubLabels.push(new Label(SMALL_LABEL,SCREEN_COLORS[0]));
+    botSubLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
+    botSubLabels[i].sprite.position.y = 0.5 - VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL/2;
+    botSubLabels[i].setText('');
+    hudScene.add(botSubLabels[i].sprite);
 }
 function updateBotLabels() {
-    botLabels.forEach(function(bot, i) {
-        if(i < bots.length)
-            botLabels[i].setText(bots[i].name);
-        else
+    for(var i = 0; i < botLabels.length; i++) {
+        if(i < bots.length) {
+            botLabels[i].setText('['+(i+1)+'] ' + bots[i].name);
+            botSubLabels[i].setText(bots[i].nick);
+        } else {
             botLabels[i].setText('');
-    })
+            botSubLabels[i].setText('');
+        }
+    }
 }
 var botIndicator = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
     new THREE.Vector3(-0.5, 0.5, 0.0),
@@ -710,7 +731,7 @@ var botIndicator = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
 ]);
 botIndicator.scale.set(0.05, 0.025, 1.0);
 botIndicator.position.z = 1;
-botIndicator.position.y = 0.5 - 0.1;
+botIndicator.position.y = 0.5 - VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL - VSPACE - 0.0125;
 botIndicator.rotation.z = Math.PI;
 hudScene.add(botIndicator);
 
