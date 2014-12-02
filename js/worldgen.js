@@ -51,9 +51,6 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         }
         return root;
     }
-
-    var adTex = new THREE.ImageUtils.loadTexture("gfx/ad1.png");
-
     
     function makeBlock(width, depth, lotSize, height, bx,bz) {
         var root = new THREE.Object3D();
