@@ -12,7 +12,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
     
     var intersections = {};
         
-    var wallObjects = [];
+    var obstacleNodes = [];
     
     var world = makeCity(2, 200, 100, 50, 2, 3); 
     
@@ -31,7 +31,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         scaleUv(pavement.children[0].geometry, blockWidth/2, blockDepth/2);
         pavement.position.y = -20;
         root.add(pavement);
-        wallObjects.push(pavement);
+        obstacleNodes.push(pavement);
         
         
         for(var z = 1-radius; z < radius; z++) {
@@ -62,7 +62,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         sidewalk.position.x = (sz[0] - lotSize)/2;
         sidewalk.position.z = (sz[1] - lotSize)/2;
         root.add(sidewalk);
-        wallObjects.push(sidewalk);
+        obstacleNodes.push(sidewalk);
         
         var lamp = makeLamp();
         lamp.position.y = 3;
@@ -139,7 +139,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             root.rotation.z = Random.normal(0, Math.PI/8);
         }
         
-        wallObjects.push(root);
+        obstacleNodes.push(root);
         
         return root;
     }
@@ -197,9 +197,9 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             westC.position.x = -diameter/2 + wD/2;
             eastC.rotation.y = Math.PI/2;
             westC.rotation.y = Math.PI/2;
-            wallObjects.push(northC);
-            wallObjects.push(eastC);
-            wallObjects.push(westC);
+            obstacleNodes.push(northC);
+            obstacleNodes.push(eastC);
+            obstacleNodes.push(westC);
             
             return root;
         })();
@@ -227,7 +227,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             top = makeSimpleBuilding(diameter, topHeight, diameter, color, backColor);
         }
         top.position.y = startHeight;
-        wallObjects.push(top);
+        obstacleNodes.push(top);
         root.add(top);
         
         return root;
@@ -243,8 +243,8 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         root.add(right);
         
         if(solid){
-            wallObjects.push(left);
-            wallObjects.push(right);
+            obstacleNodes.push(left);
+            obstacleNodes.push(right);
         }
         
         return root;
@@ -321,7 +321,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             leftWall.position.z = area.center.y;
             if(leftWall.position.x > -width/2 + wallThickness/2) {
                 root.add(leftWall);
-                wallObjects.push(leftWall);
+                obstacleNodes.push(leftWall);
             }
         });
         
@@ -514,6 +514,17 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         return root;
     }
         
+    world.updateMatrixWorld();
+    obstacles = obstacleNodes.map(function(wall){
+        //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
+        //bbox.update();
+        //world.add(bbox);
+        var box = new THREE.Box3();
+        box.setFromObject(wall);
+        return box;
+    });
+
+    
     return {doors:doors, world:world, rooms:rooms, intersections:intersections, 
-        portalDoors:portalDoors, wallObjects:wallObjects};
+        portalDoors:portalDoors, obstacles:obstacles};
 }

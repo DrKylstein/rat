@@ -94,7 +94,7 @@ renderer.setClearColor(ENV_COLORS[1],1);
     overlayScene.add(mesh);
 })();
 
-var doors, buildings, intersections, city, portalDoors, wallObjects;
+var doors, buildings, intersections, city, portalDoors, obstacleNodes;
 var spinners = [];
 var colliders = [];
 var pathFollowers = [];
@@ -119,7 +119,7 @@ var botId = -1;
     buildings = world.rooms;
     intersections = world.intersections;
     portalDoors = world.portalDoors;
-    wallObjects = world.wallObjects;
+    obstacles = world.obstacles;
     scene.add(city);
 })();
 
@@ -227,7 +227,7 @@ buildings.forEach(function(building, i) {
     var back = room.userData.size.z/2 - 5;
     mainframe.position.z -= back;
     room.add(mainframe);
-    wallObjects.push(mainframe);
+    obstacles.push(new THREE.Box3().setFromObject(mainframe));
     
     if(building.isStart) {
         terminals.push({
@@ -265,16 +265,16 @@ buildings.forEach(function(building){
         if(room.userData.size.x >= 20 && room.userData.size.z >= 20) {
             var table = makeTable();
             table.position.z = -room.userData.size.z/2 + 10/2;
-            wallObjects.push(table);
             room.add(table);
+            obstacles.push(new THREE.Box3().setFromObject(table));
         }
         building.rooms.splice(building.rooms.indexOf(room),1);
     });
     building.rooms.forEach(function(room){
         if(room.userData.size.x >= 40 && room.userData.size.z >= 30) {
             var table = makeTable();
-            wallObjects.push(table);
             room.add(table);
+            obstacles.push(new THREE.Box3().setFromObject(table));
         }
     });
 });
@@ -865,8 +865,12 @@ var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
 var DOWN = new THREE.Vector3(0,-1,0);
 var interfaceAction = null;
-var  obstacles = [];
 var botbox = new THREE.Box3();
+
+startPos.set(0,0,0);
+startRoom.localToWorld(startPos);
+bots[0].body.position.copy(startPos);
+
 function update(time) {
     var delta = Math.min(( time - prevTime ) / 1000, 0.05);
         
@@ -1100,6 +1104,7 @@ function update(time) {
                     }
                 }
             });
+            obj.body.position.y += obj.dy*delta;
         });
         
         //gun cooldown
@@ -1177,8 +1182,8 @@ function update(time) {
     
     
     //wolrd transforms don't get updated until first render for some reason
-    if(time == 0) {
-        obstacles = wallObjects.map(function(wall){
+    /*if(time == 0) {
+        obstacles = obstacleNodes.map(function(wall){
             //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
             //bbox.update();
             //scene.add(bbox);
@@ -1190,7 +1195,7 @@ function update(time) {
         startRoom.localToWorld(startPos);
         bots[0].body.position.copy(startPos);
         render(time);
-    }
+    }*/
     
     
     prevTime = time;
