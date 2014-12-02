@@ -20,11 +20,12 @@ var SCREEN_COLORS = [0x00ff00, 0x002200];
 var ENV_COLORS = [0x008800, 0x002200];
 var BUILDING_COLORS = [0x0000ff, 0xff0000, 0x00ff00, 0x00ffff, 0xff00ff, 0xffff00, 0xffffff];
 
-var camera, cameraOrtho;
+var camera, cameraOrtho, cameraNonSquare;
 var wsize;
 var renderer = new THREE.WebGLRenderer({antialias:true}); 
 var scene = new THREE.Scene(); 
 var hudScene = new THREE.Scene();
+var overlayScene = new THREE.Scene();
 renderer.autoClear = false;
 var canvas = renderer.domElement;
 document.body.appendChild(canvas);
@@ -39,6 +40,8 @@ document.body.appendChild(canvas);
     camera = new THREE.PerspectiveCamera( 75, width / height, 0.1, FAR ); 
     cameraOrtho = new THREE.OrthographicCamera(-(wsize[0])/2, (wsize[0])/2, (wsize[1])/2, -(wsize[1])/2, 1, 10);
     cameraOrtho.position.z = 10;    
+    cameraNonSquare = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 10);
+    cameraNonSquare.position.z = 10;
     renderer.setSize(width, height);
 })();
 window.onresize = function onWindowResize() {
@@ -58,29 +61,51 @@ window.onresize = function onWindowResize() {
     
     renderer.setSize(width, height);
 }
+var overlayShader;
+var noiseLevel = 0;
 
-function render() {
+function render(time) {
     renderer.clear();
     renderer.render(scene, camera);
     renderer.clearDepth();
     renderer.render(hudScene, cameraOrtho);
+    renderer.clearDepth();
+    overlayShader.uniforms.time.value = time;
+    overlayShader.uniforms.noiseLevel.value = noiseLevel;
+    renderer.render(overlayScene, cameraNonSquare);
 }
 
 scene.fog = new THREE.Fog(ENV_COLORS[1], 1, FAR);
 renderer.setClearColor(ENV_COLORS[1],1);
 
+(function(){
+    var geometry = new THREE.PlaneGeometry(1.0, 1.0);
+    overlayShader = new THREE.ShaderMaterial( {
+        vertexShader: document.getElementById( 'vertexShader' ).textContent,
+        fragmentShader: document.getElementById( 'effectShader' ).textContent,
+        uniforms:{
+            time:{type:'f', value:3},
+            noiseLevel:{type:'f', value:0}
+        }
+    });
+    var mesh = new THREE.Mesh(geometry, overlayShader);
+    overlayShader.transparent = true;
+    mesh.position.z = 1;
+    overlayScene.add(mesh);
+})();
+
 var doors, buildings, intersections, city, portalDoors, wallObjects;
 var spinners = [];
 var fallers = [];
-var moving = [];
+var pathFollowers = [];
 var stopped = [];
 var stunnable = [];
 var stunned = [];
 var projectiles = [];
 var rogueBots = [];
 var bots = [];
-var activeDevices = [];
-var inactiveDevices = [];
+var terminals = [];
+var potentialTerminals = [];
 
 var bot = null;
 var client = null;
@@ -203,7 +228,7 @@ buildings.forEach(function(building, i) {
     wallObjects.push(mainframe);
     
     if(building.isStart) {
-        activeDevices.push({
+        terminals.push({
             id:mainframe.id,
             body:mainframe, 
             name:"Cyber 1", 
@@ -213,7 +238,7 @@ buildings.forEach(function(building, i) {
             readOnly: 1
         }); 
     } else {
-        activeDevices.push({
+        terminals.push({
             id:mainframe.id,
             body:mainframe, 
             name:"Cyber "+(i+2), 
@@ -251,7 +276,7 @@ buildings.forEach(function(building){
 function spawnGuard(position, patrol) {
     var shape = makeGuard();
     shape.body.position.copy(position);
-    moving.push({
+    pathFollowers.push({
         id:shape.id,
         body:shape.body,
         speed:20,
@@ -297,7 +322,7 @@ spawnGuard(intersections[-2][-2],
         locked:false,
         hasScreen:false
     };
-    activeDevices.push(device);
+    terminals.push(device);
     bots.push(bot);
     fallers.push({id:id, body:shape.body,dy:0});
 })();
@@ -328,7 +353,7 @@ spawnGuard(intersections[-2][-2],
         key:eyeKey
     };
     rogueBots.push(bot);
-    moving.push({
+    pathFollowers.push({
         id:id,
         body:shape.body,
         speed:30,
@@ -354,8 +379,8 @@ spawnGuard(intersections[-2][-2],
         ]
     });
     stunnable.push({id:id, body:shape.body});
-    inactiveDevices.push(device);
-    //activeDevices.push(bot);
+    potentialTerminals.push(device);
+    //terminals.push(bot);
     //bots.push(bot);
 })();
 
@@ -387,7 +412,7 @@ spawnGuard(intersections[-2][-2],
         key:hackerKey
     };
     rogueBots.push(bot);
-    moving.push({
+    pathFollowers.push({
         id:id,
         body:shape.body, 
         face:true,
@@ -402,8 +427,8 @@ spawnGuard(intersections[-2][-2],
         device:bot
     })
     stunnable.push({id:id, body:shape.body});
-    inactiveDevices.push(device);
-    //activeDevices.push(bot);
+    potentialTerminals.push(device);
+    //terminals.push(bot);
     //bots.push(bot);
     fallers.push({id:id, body:shape.body,dy:0});
 })();
@@ -683,7 +708,7 @@ function setBot(fn) {
         bot.body.visible = true;
     
     bot = bots[fn];
-    client = findById(activeDevices, bot.id).obj;
+    client = findById(terminals, bot.id).obj;
     botId = bot.id;
     bot.body.visible = false;
     controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
@@ -812,22 +837,15 @@ function handleBotSaveDelete(index) {
 
 var v = new THREE.Vector3(0,0,0);
 var m = new THREE.Matrix4();
-var rotation = new THREE.Euler( 0, Math.PI/8, 0, "YXZ" );
 var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
-
 var DOWN = new THREE.Vector3(0,-1,0);
-var UP = new THREE.Vector3(0,1,0);
-var START_ANG = new THREE.Euler( 0, -Math.PI/4, 0, "YXZ" ); 
-var REF_HEADING = new THREE.Vector3(0,0,1);
 var interfaceAction = null;
 var  wallBoxes = [];
 function update(time) {
     var delta = Math.min(( time - prevTime ) / 1000, 0.05);
-    var botPos = bot.body.position;
-    var eyePos = botPos.clone();
-    eyePos.y += 5;
-        
+    
+    //gravity
     fallers.forEach(function(item) {
         scene.remove(item.body);
         var testPos = item.body.position.clone();
@@ -845,7 +863,8 @@ function update(time) {
         }
         scene.add(item.body);
     });
-        
+    
+    //culling
     portalDoors.forEach(function(portal){
         v.copy(bot.body.position);
         portal.door.worldToLocal(v);
@@ -855,8 +874,9 @@ function update(time) {
             v.x > -size.x/2 && v.x < size.x/2) || portal.door.position.x > 0;
     });
 
-    if(controls.enabled || time == 0) {
-        if(activeDevices.every(function(device){
+    if(controls.enabled || time == 0) { //when not paused, or on first frame
+        
+        if(terminals.every(function(device){
             if(device === client) return true;
             v.set(0,0,0);
             device.body.localToWorld(v);
@@ -911,7 +931,6 @@ function update(time) {
             }
         }
 
-        
         spinners.forEach(function(item){
             item.rotation.y = Math.PI*time/500;
         });
@@ -936,7 +955,7 @@ function update(time) {
             }
         });
         
-        moving.forEach(function(mover){
+        pathFollowers.forEach(function(mover){
             if(mover.body.position.distanceTo(mover.path[mover.index]) < 1) {
                 mover.index = (mover.index+1) % mover.path.length;
             }
@@ -953,26 +972,27 @@ function update(time) {
             mover.body.position.add(v);
         });
         
+        //stunned bots
         stunned.forEach(function(stunned){
             stunned.time -= delta;
         });
-        
         stunned.filter(function(item){return item.time <= 0;}).forEach(
         function(item, i){
             stunned.splice(i, 1);
             var foundMover = findById(stopped, item.id);
             if(foundMover) {
                 stopped.splice(foundMover.index, 1);
-                moving.push(foundMover.obj);
+                pathFollowers.push(foundMover.obj);
             }
             
-            var foundDevice = findById(activeDevices, item.id);
+            var foundDevice = findById(terminals, item.id);
             if(foundDevice) {
-                activeDevices.splice(foundDevice.index, 1);
-                inactiveDevices.push(foundDevice.obj);
+                terminals.splice(foundDevice.index, 1);
+                potentialTerminals.push(foundDevice.obj);
             }
         });
         
+        //projectiles
         var deadProjectiles = [];
         projectiles.forEach(function(proj){
             raycaster.near = 0;
@@ -992,15 +1012,15 @@ function update(time) {
                         found.obj.time += 10;
                     } else {
                         stunned.push({id:item.id, time:10});
-                        var found = findById(moving, item.id);
+                        var found = findById(pathFollowers, item.id);
                         if(found) {
-                            moving.splice(found.index, 1);
+                            pathFollowers.splice(found.index, 1);
                             stopped.push(found.obj);
                         }
-                        var found = findById(inactiveDevices, item.id);
+                        var found = findById(potentialTerminals, item.id);
                         if(found) {
-                            inactiveDevices.splice(found.index, 1);
-                            activeDevices.push(found.obj);
+                            potentialTerminals.splice(found.index, 1);
+                            terminals.push(found.obj);
                         }
                     }
                 }
@@ -1021,6 +1041,7 @@ function update(time) {
             scene.remove(proj.body);
         });
         
+        //player collsion
         var botbox = new THREE.Box3(
             new THREE.Vector3(bot.body.position.x-bot.radius, bot.body.position.y-bot.radius, bot.body.position.z-bot.radius),
             new THREE.Vector3(bot.body.position.x+bot.radius, bot.body.position.y+bot.radius, bot.body.position.z+bot.radius)
@@ -1031,68 +1052,44 @@ function update(time) {
                 var rd = box.max.x - botbox.min.x; //+ if intersecting
                 var md = botbox.max.z - box.min.z; //+ if intersecting
                 var pd = box.max.z - botbox.min.z; //+ if intersecting
-                if(ld < 0) ld = Number.POSITIVE_INFINITY;
-                if(rd < 0) ld = Number.POSITIVE_INFINITY;
-                if(md < 0) ld = Number.POSITIVE_INFINITY;
-                if(pd < 0) ld = Number.POSITIVE_INFINITY;
+                if(ld <= 0) ld = Number.POSITIVE_INFINITY;
+                if(rd <= 0) rd = Number.POSITIVE_INFINITY;
+                if(md <= 0) md = Number.POSITIVE_INFINITY;
+                if(pd <= 0) pd = Number.POSITIVE_INFINITY;
                 if(ld < rd && ld < md && ld < pd) {
-                    bot.body.position.x = box.min.x - bot.radius;
+                    bot.body.position.x = box.min.x - bot.radius - 0.1;
+                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
                 }
                 if(rd < ld && rd < pd && rd < md) {
-                    bot.body.position.x = box.max.x + bot.radius;
+                    bot.body.position.x = box.max.x + bot.radius + 0.1;
+                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
                 }
                 if(md < pd && md < ld && md < rd) {
-                    bot.body.position.z = box.min.z - bot.radius;
+                    bot.body.position.z = box.min.z - bot.radius - 0.1;
+                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
                 }
                 if(pd < md && pd < ld && pd < rd) {
-                    bot.body.position.z = box.max.z + bot.radius;
+                    bot.body.position.z = box.max.z + bot.radius + 0.1;
+                    noiseLevel = Math.min(1.0,noiseLevel+0.5);
                 }
             }
         });
-        /*
-        raycaster.far = bot.radius+1;
-        raycaster.near = bot.radius;
-        controls.getDirection(v);
-        v.applyEuler(START_ANG);
-        controls.objectInFront = false;
-        
-        for(var i = 0; i < 4; i++) {
-            raycaster.set(eyePos, v);
-            controls.objectInFront = controls.objectInFront || (raycaster.intersectObject(scene, true).length > 0);
-            v.applyEuler(rotation);
-        }
-        controls.objectOnLeft = false;
-        for(var i = 0; i < 4; i++) {
-            raycaster.set(eyePos, v);
-            controls.objectOnLeft = controls.objectOnLeft || (raycaster.intersectObject(scene, true).length > 0);
-            v.applyEuler(rotation);
-        }
-        controls.objectInBack = false;
-        for(var i = 0; i < 4; i++) {
-            raycaster.set(eyePos, v);
-            controls.objectInBack = controls.objectInBack || (raycaster.intersectObject(scene, true).length > 0);
-            v.applyEuler(rotation);
-        }
-        controls.objectOnRight = false;
-        for(var i = 0; i < 4; i++) {
-            raycaster.set(eyePos, v);
-            controls.objectOnRight = controls.objectOnRight || (raycaster.intersectObject(scene, true).length > 0);
-            v.applyEuler(rotation);
-        }*/
-            
-        controls.update(delta);
 
+        //gun cooldown
         if(cooldown > 0)
             cooldown -= delta;
         
-        
+        //radiation damge
         var radiation = Math.floor(Math.max(bot.body.position.lengthManhattan() - 800, 0)/100);
         radBar.set(radiation);
         if(radiation > 1) {
             if(!('damage' in bot)) {
                 bot.damage = 0;
             }
+            var b = Math.floor(bot.damage);
             bot.damage += radiation*0.3*delta;
+            if(b < Math.floor(bot.damage))
+                noiseLevel = 1.0;
         } else {
             if('damage' in bot) {
                 if(bot.damage > 0) {
@@ -1103,49 +1100,60 @@ function update(time) {
                 }
             }
         }
+        
+        //repair
         if(bot.damage) {
             damageBar.set(bot.damage);
         } else {
             damageBar.set(0);
         }
         
+        //die and respawn
         if((bot.damage && bot.damage > 10) || bot.body.position.y < -5) {
             bot.body.position.copy(bot.spawn);
             bot.damage = 0;
-            var device = findById(activeDevices, bot.id);
+            var device = findById(terminals, bot.id);
             device.obj.contents.splice(0,device.obj.contents.length);
             if(bot.resetOwner) {
                 device.obj.locked = true;
                 var foundBot = findById(bots, bot.id);
                 bots.splice(foundBot.index, 1);
                 rogueBots.push(foundBot.obj);
-                activeDevices.splice(device.index, 1);
-                inactiveDevices.push(device.obj);
+                terminals.splice(device.index, 1);
+                potentialTerminals.push(device.obj);
                 var mover = findById(stopped, bot.id);
                 stopped.splice(mover.index, 1);
-                moving.push(mover.obj);
+                pathFollowers.push(mover.obj);
                 setBot(0);
                 updateBotLabels();
             }
             updateRampaks();
         }
+        
+        //player movement
+        controls.update(delta);
     }
+    
+    //visual effects
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
-    render();
+    if(noiseLevel > 0) {
+        noiseLevel = Math.max(0,noiseLevel - 1.0*delta);
+    }
     
+    render(time);
+    
+    //bounding boxes don't get updated until first render for some reason
     if(time == 0) {
         wallBoxes = wallObjects.map(function(wall){
-            wall.updateMatrixWorld();
-            var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
-            bbox.update();
-            scene.add(bbox);
+            //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
+            //bbox.update();
+            //scene.add(bbox);
             var box = new THREE.Box3();
             box.setFromObject(wall);
             return box;
         });
     }
-
     
     prevTime = time;
     requestAnimationFrame(update);
