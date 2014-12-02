@@ -20,7 +20,7 @@ var SCREEN_COLORS = [0x00ff00, 0x002200];
 var ENV_COLORS = [0x008800, 0x002200];
 var BUILDING_COLORS = [0x0000ff, 0xff0000, 0x00ff00, 0x00ffff, 0xff00ff, 0xffff00, 0xffffff];
 
-var camera, cameraOrtho, cameraNonSquare;
+var camera, hudCamera, overlayCamera;
 var wsize;
 var renderer = new THREE.WebGLRenderer({antialias:true}); 
 var scene = new THREE.Scene(); 
@@ -38,10 +38,10 @@ document.body.appendChild(canvas);
     wsize = [width/min, height/min];
     
     camera = new THREE.PerspectiveCamera( 75, width / height, 0.1, FAR ); 
-    cameraOrtho = new THREE.OrthographicCamera(-(wsize[0])/2, (wsize[0])/2, (wsize[1])/2, -(wsize[1])/2, 1, 10);
-    cameraOrtho.position.z = 10;    
-    cameraNonSquare = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 10);
-    cameraNonSquare.position.z = 10;
+    hudCamera = new THREE.OrthographicCamera(-(wsize[0])/2, (wsize[0])/2, (wsize[1])/2, -(wsize[1])/2, 1, 10);
+    hudCamera.position.z = 10;    
+    overlayCamera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 10);
+    overlayCamera.position.z = 10;
     renderer.setSize(width, height);
 })();
 window.onresize = function onWindowResize() {
@@ -53,11 +53,11 @@ window.onresize = function onWindowResize() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     
-    cameraOrtho.left = - (wsize[0]) / 2;
-    cameraOrtho.right = (wsize[0]) / 2;
-    cameraOrtho.top = (wsize[1]) / 2;
-    cameraOrtho.bottom = - (wsize[1]) / 2;
-    cameraOrtho.updateProjectionMatrix();
+    hudCamera.left = - (wsize[0]) / 2;
+    hudCamera.right = (wsize[0]) / 2;
+    hudCamera.top = (wsize[1]) / 2;
+    hudCamera.bottom = - (wsize[1]) / 2;
+    hudCamera.updateProjectionMatrix();
     
     renderer.setSize(width, height);
 }
@@ -68,11 +68,11 @@ function render(time) {
     renderer.clear();
     renderer.render(scene, camera);
     renderer.clearDepth();
-    renderer.render(hudScene, cameraOrtho);
+    renderer.render(hudScene, hudCamera);
     renderer.clearDepth();
     overlayShader.uniforms.time.value = time;
     overlayShader.uniforms.noiseLevel.value = noiseLevel;
-    renderer.render(overlayScene, cameraNonSquare);
+    renderer.render(overlayScene, overlayCamera);
 }
 
 scene.fog = new THREE.Fog(ENV_COLORS[1], 1, FAR);
@@ -94,11 +94,11 @@ renderer.setClearColor(ENV_COLORS[1],1);
     overlayScene.add(mesh);
 })();
 
-var doors, buildings, intersections, city, portalDoors, obstacleNodes;
+var doors, buildings, intersections, city, portalDoors, obstacles;
 var spinners = [];
 var colliders = [];
-var pathFollowers = [];
-var stopped = [];
+var pathers = [];
+var pausedPathers = [];
 var stunnable = [];
 var stunned = [];
 var projectiles = [];
@@ -283,7 +283,7 @@ buildings.forEach(function(building){
 function spawnGuard(position, patrol) {
     var shape = makeGuard();
     shape.body.position.copy(position);
-    pathFollowers.push({
+    pathers.push({
         id:shape.id,
         body:shape.body,
         speed:20,
@@ -373,7 +373,7 @@ var startPos = new THREE.Vector3(0,0,0);
         key:eyeKey
     };
     rogueBots.push(bot);
-    pathFollowers.push({
+    pathers.push({
         id:id,
         body:shape.body,
         speed:30,
@@ -431,7 +431,7 @@ var startPos = new THREE.Vector3(0,0,0);
         key:hackerKey
     };
     rogueBots.push(bot);
-    pathFollowers.push({
+    pathers.push({
         id:id,
         body:shape.body, 
         face:true,
@@ -968,7 +968,7 @@ function update(time) {
         });
         
         
-        pathFollowers.forEach(function(mover){
+        pathers.forEach(function(mover){
             if(mover.body.position.distanceTo(mover.path[mover.index]) < 1) {
                 mover.index = (mover.index+1) % mover.path.length;
             }
@@ -993,10 +993,10 @@ function update(time) {
         stunned.filter(function(item){return item.time <= 0;}).forEach(
         function(item, i){
             stunned.splice(i, 1);
-            var foundMover = findById(stopped, item.id);
+            var foundMover = findById(pausedPathers, item.id);
             if(foundMover) {
-                stopped.splice(foundMover.index, 1);
-                pathFollowers.push(foundMover.obj);
+                pausedPathers.splice(foundMover.index, 1);
+                pathers.push(foundMover.obj);
             }
             
             var foundDevice = findById(terminals, item.id);
@@ -1027,10 +1027,10 @@ function update(time) {
                         found.obj.time += 10;
                     } else {
                         stunned.push({id:item.id, time:10});
-                        var found = findById(pathFollowers, item.id);
+                        var found = findById(pathers, item.id);
                         if(found) {
-                            pathFollowers.splice(found.index, 1);
-                            stopped.push(found.obj);
+                            pathers.splice(found.index, 1);
+                            pausedPathers.push(found.obj);
                         }
                         var found = findById(potentialTerminals, item.id);
                         if(found) {
@@ -1156,9 +1156,9 @@ function update(time) {
                 rogueBots.push(foundBot.obj);
                 terminals.splice(device.index, 1);
                 potentialTerminals.push(device.obj);
-                var mover = findById(stopped, bot.id);
-                stopped.splice(mover.index, 1);
-                pathFollowers.push(mover.obj);
+                var mover = findById(pausedPathers, bot.id);
+                pausedPathers.splice(mover.index, 1);
+                pathers.push(mover.obj);
                 setBot(0);
                 updateBotLabels();
             }
