@@ -510,7 +510,7 @@ function makeWorld() {
     var cityDepth = zBlocks*blockDepth + alleySize;
         
     var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
-    ocean.position.set(cityWidth/2 - 2000/2, -10, cityDepth/2 - 2000/2);
+    ocean.position.set(cityWidth/2, -10, cityDepth/2);
     ocean.name = 'ocean';
     root.add(ocean);
     
@@ -925,7 +925,7 @@ function makeWorld() {
             eye:shape.eye,
             speed:400.0,
             vspeed:400.0,
-            spawn: intersections[sx][sz],
+            spawn: shape.body.position.clone(),
             resetOwner: true,
             name:'Flying Eye',
             nick:nick
@@ -1030,6 +1030,8 @@ function makeWorld() {
     botMarkers.forEach(function(marker){
         map.add(marker.blip);
     });
+    
+    var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth, 500, cityDepth));
 
     return {
         doors:doors, 
@@ -1042,8 +1044,12 @@ function makeWorld() {
         botMarkers:botMarkers,
         spinners:spinners,
         terminals:terminals,
+        potentialTerminals:potentialTerminals,
         colliders:colliders,
         pathers:pathers,
-        stunnable:stunnable
+        stunnable:stunnable,
+        safeZone:safeZone,
+        bots:bots,
+        rogueBots:rogueBots
     };
 }

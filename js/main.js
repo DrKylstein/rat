@@ -215,8 +215,8 @@ var compass = new THREE.Object3D();
         new THREE.Vector3(-0.5, -0.5, 0.0),
         new THREE.Vector3(0.5, -0.5, 0.0)
     ]);
-    eastMarker.position.x = -1;
-    eastMarker.rotation.y = -Math.PI/2;
+    eastMarker.position.x = 1;
+    eastMarker.rotation.y = Math.PI/2;
     eastMarker.scale.set(0.025, 0.025, 1.0);
     compass.add(eastMarker);
     var westMarker = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
@@ -226,8 +226,8 @@ var compass = new THREE.Object3D();
         new THREE.Vector3(-0.5, -0.25, 0.0),
         new THREE.Vector3(0.5, -0.5, 0.0)
     ]);
-    westMarker.position.x = 1;
-    westMarker.rotation.y = Math.PI/2;
+    westMarker.position.x = -1;
+    westMarker.rotation.y = -Math.PI/2;
     westMarker.rotation.z = Math.PI/2;
     westMarker.scale.set(0.025, 0.025, 1.0);
     compass.add(westMarker);
@@ -566,7 +566,7 @@ function update(time) {
                         monitor.clear();
                         if(device.locked) {
                             device.locked = false;
-                            var found = findById(rogueBots, device.id);
+                            var found = findById(world.rogueBots, device.id);
                             if(found) {
                                 world.rogueBots.splice(found.index, 1);
                                 world.bots.push(found.obj);
@@ -688,12 +688,12 @@ function update(time) {
                         found.obj.time += 10;
                     } else {
                         stunned.push({id:item.id, time:10});
-                        var found = findById(pathers, item.id);
+                        var found = findById(world.pathers, item.id);
                         if(found) {
                             world.pathers.splice(found.index, 1);
                             pausedPathers.push(found.obj);
                         }
-                        var found = findById(potentialTerminals, item.id);
+                        var found = findById(world.potentialTerminals, item.id);
                         if(found) {
                             world.potentialTerminals.splice(found.index, 1);
                             world.terminals.push(found.obj);
@@ -771,7 +771,7 @@ function update(time) {
             cooldown -= delta;
         
         
-        var radiation = 0;//Math.floor(Math.max(bot.body.position.lengthManhattan() - 1500, 0)/100);
+        var radiation = world.safeZone.distanceToPoint(bot.body.position)/30;
         radBar.set(radiation);
         if(radiation > 1) {
             if(!('damage' in bot)) {
@@ -809,12 +809,14 @@ function update(time) {
                 device.obj.locked = true;
                 var foundBot = findById(world.bots, bot.id);
                 world.bots.splice(foundBot.index, 1);
-                rogueBots.push(foundBot.obj);
+                world.rogueBots.push(foundBot.obj);
                 world.terminals.splice(device.index, 1);
-                potentialTerminals.push(device.obj);
-                var mover = findById(pausedPathers, bot.id);
-                pausedPathers.splice(mover.index, 1);
-                pathers.push(mover.obj);
+                world.potentialTerminals.push(device.obj);
+                var pather = findById(pausedPathers, bot.id);
+                if(pather) {
+                    pausedPathers.splice(mover.index, 1);
+                    world.pathers.push(mover.obj);
+                }
                 setBot(0);
                 updateBotLabels();
             }
