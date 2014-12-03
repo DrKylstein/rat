@@ -17,6 +17,65 @@ function makeWorld() {
     var map;
     
     
+    var gridTex = new THREE.ImageUtils.loadTexture("gfx/grid.png");
+    gridTex.wrapS = THREE.RepeatWrapping; 
+    gridTex.wrapT = THREE.RepeatWrapping;
+    gridTex.anisotropy = 8;
+    
+        
+            
+    var world; 
+        
+    var map = new THREE.Object3D();
+    map.rotation.x = Math.PI;
+        
+    var xBlocks = 3;
+    var zBlocks = 2;
+    var lotSize = 200;
+    var roadSize = 100;
+    var alleySize = 50;
+    var xLots = 2;
+    var zLots = 3;
+    var heightFactor = 100;
+    var heightPower = 1;
+        
+    var root = new THREE.Object3D();
+    var blockWidth = lotSize*xLots + roadSize;
+    var blockDepth = lotSize*zLots + alleySize;
+    var cityWidth = xBlocks*blockWidth + roadSize;
+    var cityDepth = zBlocks*blockDepth + alleySize;
+        
+    var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
+    ocean.position.set(cityWidth/2, -10, cityDepth/2);
+    ocean.name = 'ocean';
+    root.add(ocean);
+    
+    var pavement = makeBox(cityWidth, 20, cityDepth, null, gridTex);
+    scaleUv(pavement.children[0].geometry, blockWidth/2, blockDepth/2);
+    pavement.position.set(cityWidth/2, -20, cityDepth/2);
+    root.add(pavement);
+    obstacleNodes.push(pavement);
+    
+    for(var z = 0; z < zBlocks; z++) {
+        for(var x = 0; x < xBlocks; x++) {
+            var height = 100;
+            var block = makeBlock(xLots,zLots,lotSize,height,x,z);
+            block.position.z = z*blockDepth + alleySize;
+            block.position.x = x*blockWidth + roadSize;
+            root.add(block);
+        }
+    }
+    var intersections = {};
+    for(var z = 0; z <= zBlocks; z++) {
+        intersections[z] = {};
+        for(var x = 0; x <= xBlocks; x++) {
+            intersections[z][x] = (new THREE.Vector3(x*blockWidth + roadSize/2, 0.0, z*blockDepth + alleySize/2));
+            /*var marker = makeMarker();
+            marker.position.set(intersections[z][x].x, intersections[z][x].z, 1);
+            map.add(marker);*/
+        }
+    }
+    
     function makeBlock(width, depth, lotSize, height, bx,bz) {
         var root = new THREE.Object3D();
         var sz = [width*lotSize, depth*lotSize];
@@ -70,11 +129,11 @@ function makeWorld() {
                 if(z == 0) side.push(Math.PI);
                 if(z == depth - 1) side.push(0);
                 var style = Random.choose(BUILDING_COLORS);
-                if((Math.abs(x) > 0 || Math.abs(z) > 0) && Math.random() > 0.75) {
+                if(Math.random() > 0.6) {
                     
                 } else {
                     var building = makeBuilding(lotSize-75 , 
-                        Math.max(Random.normal(height, 200),60), style, 0x000000, bx*width+x, bz*depth+z);
+                        Math.max(Random.normal(60, 300), 22), style, 0x000000, bx*width+x, bz*depth+z);
                     building.position.y = 3;
                     building.position.z = z*lotSize + lotSize/2;
                     building.position.x = x*lotSize + lotSize/2;
@@ -172,7 +231,7 @@ function makeWorld() {
         root.add(interior);
         //interior.visible = false;
         
-        var layout = makeInnerLayout(diameter-wD*2, 20 - 0.1, diameter-wD, 2, color, color & 0x444444);
+        var layout = makeInnerLayout(diameter-wD*2, 20 - 0.1, diameter-wD, 2, color, color & 0x444444, height);
         root.add(layout);
         
         portalDoors.push({door:door, inside:layout, size:new THREE.Vector2(diameter-2, diameter-2)});
@@ -249,7 +308,7 @@ function makeWorld() {
         return root;
     }
         
-    function makeInnerLayout(width, height, depth, wallThickness, color, backColor) {
+    function makeInnerLayout(width, height, depth, wallThickness, color, backColor, bh) {
         var root = new THREE.Object3D();
         var bounds = flattenDegenerateTree(
             subdivide(
@@ -268,7 +327,7 @@ function makeWorld() {
             backmostPos = Math.min(bound.min.y,backmostPos);
         });
         
-        var meta = {rooms:[], leafRooms:[], obj:root, size:new THREE.Vector3(width, height, depth)};
+        var meta = {rooms:[], leafRooms:[], obj:root, size:new THREE.Vector3(width, height, depth), height:bh};
         
         areas.forEach(function(area, i){
             var room = new THREE.Object3D();
@@ -480,65 +539,6 @@ function makeWorld() {
     }
 
     
-    
-    var gridTex = new THREE.ImageUtils.loadTexture("gfx/grid.png");
-    gridTex.wrapS = THREE.RepeatWrapping; 
-    gridTex.wrapT = THREE.RepeatWrapping;
-    gridTex.anisotropy = 8;
-    
-        
-            
-    var world; 
-        
-    var map = new THREE.Object3D();
-    map.rotation.x = Math.PI;
-        
-    var xBlocks = 3;
-    var zBlocks = 3;
-    var lotSize = 200;
-    var roadSize = 100;
-    var alleySize = 50;
-    var xLots = 2;
-    var zLots = 3;
-    var heightFactor = 100;
-    var heightPower = 1.5;
-        
-    var root = new THREE.Object3D();
-    var blockWidth = lotSize*xLots + roadSize;
-    var blockDepth = lotSize*zLots + alleySize;
-    var cityWidth = xBlocks*blockWidth + roadSize;
-    var cityDepth = zBlocks*blockDepth + alleySize;
-        
-    var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
-    ocean.position.set(cityWidth/2, -10, cityDepth/2);
-    ocean.name = 'ocean';
-    root.add(ocean);
-    
-    var pavement = makeBox(cityWidth, 20, cityDepth, null, gridTex);
-    scaleUv(pavement.children[0].geometry, blockWidth/2, blockDepth/2);
-    pavement.position.set(cityWidth/2, -20, cityDepth/2);
-    root.add(pavement);
-    obstacleNodes.push(pavement);
-    
-    for(var z = 0; z < zBlocks; z++) {
-        for(var x = 0; x < xBlocks; x++) {
-            var height = Math.pow(Math.max(Math.abs(x-xBlocks/2)/xBlocks,Math.abs(z-xBlocks/2)/zBlocks),heightPower)*heightFactor;
-            var block = makeBlock(xLots,zLots,lotSize,height,x,z);
-            block.position.z = z*blockDepth + alleySize;
-            block.position.x = x*blockWidth + roadSize;
-            root.add(block);
-        }
-    }
-    var intersections = {};
-    for(var z = 0; z <= zBlocks; z++) {
-        intersections[z] = {};
-        for(var x = 0; x <= xBlocks; x++) {
-            intersections[z][x] = (new THREE.Vector3(x*blockWidth + roadSize/2, 0.0, z*blockDepth + alleySize/2));
-            /*var marker = makeMarker();
-            marker.position.set(intersections[z][x].x, intersections[z][x].z, 1);
-            map.add(marker);*/
-        }
-    }
     world = root;
     
     world.updateMatrixWorld();
@@ -670,19 +670,24 @@ function makeWorld() {
 
     var programs = [
         hackerKey,
+        mcp[0],
+        mcp[1],
+        mcp[2],
         eyeKey,
         radar,
         prgMap,
-        mcp[0],
-        mcp[1],
-        mcp[2]
     ];
         
     Random.shuffle(buildings);
+    buildings.sort(function(a,b){return b.height - a.height;});
         
     var startRoom;
     programs.forEach(function(program, i) {
-        var building = buildings[i];
+        var building = buildings[i%buildings.length];
+        while(building.leafRooms.length == 0) {
+            i++;
+            building = buildings[i%buildings.length]
+        }
         var room = Random.choose(building.leafRooms);
         var mainframe = makeMainframe();
         var back = room.userData.size.z/2 - 5;
@@ -1049,7 +1054,7 @@ function makeWorld() {
     var mapAdjusted = new THREE.Object3D();
     mapAdjusted.add(map);
     map.position.y = 1.0;
-    map.position.x = (1.0 - Math.min(cityWidth, cityDepth)/Math.max(cityWidth, cityDepth));
+    map.position.x = 0;
     
     return {
         doors:doors, 
