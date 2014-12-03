@@ -144,3 +144,13 @@ function makeLines(color, mode, points) {
     geometry.vertices = points; 
     return new THREE.Line( geometry, material, mode );
 }
+
+function makeLineBox(w, h, color) {
+    return makeLines(color, THREE.LineStrip, [
+        new THREE.Vector3(-w/2, -h/2, 0),
+        new THREE.Vector3(w/2, -h/2, 0),
+        new THREE.Vector3(w/2, h/2, 0),
+        new THREE.Vector3(-w/2, h/2, 0),
+        new THREE.Vector3(-w/2, -h/2, 0)
+    ]);
+}

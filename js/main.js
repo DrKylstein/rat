@@ -104,8 +104,10 @@ var stunned = [];
 var projectiles = [];
 var rogueBots = [];
 var bots = [];
+var botMarkers = [];
 var terminals = [];
 var potentialTerminals = [];
+var map;
 
 var bot = null;
 var client = null;
@@ -116,10 +118,11 @@ var botId = -1;
     var world = makeWorld(ENV_COLORS, BUILDING_COLORS);
     doors = world.doors;
     city = world.world;
-    buildings = world.rooms;
+    buildings = world.buildings;
     intersections = world.intersections;
     portalDoors = world.portalDoors;
     obstacles = world.obstacles;
+    map = world.map;
     scene.add(city);
 })();
 
@@ -272,6 +275,13 @@ buildings.forEach(function(building){
 });
 
 
+function makeMarker() {
+    var box = makeBox(50,50,1,0xffffff,0xffffff);
+    box.children[0].position.y = 0;
+    return box;
+}
+
+
 function spawnGuard(position, patrol) {
     var shape = makeGuard();
     shape.body.position.copy(position);
@@ -286,12 +296,12 @@ function spawnGuard(position, patrol) {
     scene.add(shape.body);
 }
 
-spawnGuard(intersections[-2][-2],
+spawnGuard(intersections[0][0],
     [
-        intersections[-2][-2],
-        intersections[-1][-2],
-        intersections[-1][-1],
-        intersections[-2][-1]
+        intersections[0][0],
+        intersections[1][0],
+        intersections[1][1],
+        intersections[0][1]
     ]
 );
 
@@ -334,6 +344,9 @@ startRoom.localToWorld(startPos);
         g:9.8,
         dy:0
     });
+    
+    botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
+    
 })();
 
 (function(){
@@ -397,6 +410,7 @@ startRoom.localToWorld(startPos);
     });
     stunnable.push({id:id, body:shape.body});
     potentialTerminals.push(device);
+    botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
 })();
 
 (function(){
@@ -406,7 +420,7 @@ startRoom.localToWorld(startPos);
     var nick = Random.choose(['Conky', 'Igor', 'Data']);
     
     scene.add(shape.body);
-    shape.body.position.copy(intersections[-1][-1]);
+    shape.body.position.copy(intersections[1][1]);
     var bot = {
         id:id,
         body:shape.body,
@@ -414,7 +428,7 @@ startRoom.localToWorld(startPos);
         hacker:true,
         speed:200.0,
         vspeed:0.0,
-        spawn:intersections[-1][-1],
+        spawn:intersections[1][1],
         resetOwner: true,
         name:'Hacker',
         nick:nick
@@ -434,10 +448,10 @@ startRoom.localToWorld(startPos);
         body:shape.body, 
         face:true,
         path:[
-            intersections[-1][-1],
-            intersections[0][-1],
+            intersections[1][1],
+            intersections[0][1],
             intersections[0][0],
-            intersections[-1][0]
+            intersections[1][0]
         ],
         index:0,
         speed:20,
@@ -452,6 +466,7 @@ startRoom.localToWorld(startPos);
         g:9.8,
         dy:0
     });
+    botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
 })();
 
 var controls = new THREE.PointerLockControls(camera, bots[0].body, bots[0].eye);
@@ -600,6 +615,17 @@ crosshair.position.z = 1;
 hudScene.add(crosshair);
 crosshair.visible = false;
 
+map.position.z = 1;
+map.scale.x *= 0.25;
+map.scale.y *= 0.25;
+map.position.x = 0.5 - 0.25;
+map.position.y = 0.5 - 0.25;
+hudScene.add(map);
+
+botMarkers.forEach(function(marker){
+    map.add(marker.blip);
+});
+
 function Bar(height, lineWidth, spacing, length) {
     var root = new THREE.Object3D();
     for(var i= 0; i < length; i++) {
@@ -732,7 +758,7 @@ var pauseMessage = new THREE.Object3D();
 (function(){
     var paused = makeStaticLabel('[Paused]', 0.1, SCREEN_COLORS[0]);
     paused.position.y = 0.025;
-    var clickto = makeStaticLabel('Click to continue.', 0.05, SCREEN_COLORS[0]);
+    var clickto = makeStaticLabel('Click to continue.', BIG_LABEL, SCREEN_COLORS[0]);
     clickto.position.y = -0.05;
     pauseMessage.add(paused);
     pauseMessage.add(clickto);
@@ -908,7 +934,6 @@ function update(time) {
                 if(host === device) {
                 } else {
                     host = device;
-                    //console.log(device.hasScreen)
                     if(!device.hasScreen) {
                         terminalEmulator.position.y = 0.0;
                     }
@@ -991,10 +1016,7 @@ function update(time) {
             
             if(pather.face) {
                 m.lookAt(pather.body.position, pather.path[pather.index], UP);
-                //m.setPosition(pather.body.position);
                 pather.body.rotation.setFromRotationMatrix(m);
-                //pather.body.lookAt(pather.path[pather.index]);
-                //pather.body.rotation.y += Math.PI;
             }
             
             v.multiplyScalar(pather.speed*delta);
@@ -1124,7 +1146,7 @@ function update(time) {
             cooldown -= delta;
         
         
-        var radiation = Math.floor(Math.max(bot.body.position.lengthManhattan() - 800, 0)/100);
+        var radiation = 0;//Math.floor(Math.max(bot.body.position.lengthManhattan() - 1500, 0)/100);
         radBar.set(radiation);
         if(radiation > 1) {
             if(!('damage' in bot)) {
@@ -1177,7 +1199,10 @@ function update(time) {
         controls.update(delta);
     }
     
-    
+    botMarkers.forEach(function(marker){
+        marker.blip.position.x = marker.body.position.x;
+        marker.blip.position.y = marker.body.position.z;
+    });
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
     if(noiseLevel > 0) {
