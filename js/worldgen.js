@@ -130,10 +130,14 @@ function makeWorld() {
                 if(z == depth - 1) side.push(0);
                 var style = Random.choose(BUILDING_COLORS);
                 if(Math.random() > 0.6) {
-                    
+                    var building = makeRubble(lotSize-75, ENV_COLORS[0], 0x000000);
+                    building.position.y = 3;
+                    building.position.z = z*lotSize + lotSize/2;
+                    building.position.x = x*lotSize + lotSize/2;
+                    root.add(building);
                 } else {
-                    var building = makeBuilding(lotSize-75 , 
-                        Math.max(Random.normal(60, 300), 22), style, 0x000000, bx*width+x, bz*depth+z);
+                    var building = makeBuilding(lotSize-75, 
+                        Math.max(Random.normal(60, 300), 22), style, 0x000000);
                     building.position.y = 3;
                     building.position.z = z*lotSize + lotSize/2;
                     building.position.x = x*lotSize + lotSize/2;
@@ -155,17 +159,60 @@ function makeWorld() {
         var light = makeBox(3,3,3, 0x00ff00, 0x00ff00);
         light.position.y = 30;
         root.add(light);
-        /*if(Math.random() > 0.75) {
-            root.rotation.x = Random.normal(0, Math.PI/8);
-            root.rotation.z = Random.normal(0, Math.PI/8);
-        }*/
-        
+        if(Math.random() > 0.75) {
+            root.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+            root.rotation.z = Random.real(-Math.PI/6, Math.PI/6);
+            if(Math.random() > 0.5) 
+            root.remove(light);
+        }
         obstacleNodes.push(root);
         
         return root;
     }
     
-    function makeBuilding(diameter, height, color, backColor, x, z) {
+    function makeRubble(diameter, color, backColor) {
+        var wD = 2;
+        var root = new THREE.Object3D();
+        var northC = makeBox(diameter, Random.real(10, 40), wD, color, backColor, true);
+        var southC = makeBox(diameter, Random.real(10, 40), wD, color, backColor, true);
+        var eastC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor, true);
+        var westC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor, true);
+        northC.position.z = -diameter/2 + wD/2;
+        southC.position.z = diameter/2 - wD/2;
+        eastC.position.x = diameter/2 - wD/2;
+        westC.position.x = -diameter/2 + wD/2;
+        eastC.rotation.y = Math.PI/2;
+        westC.rotation.y = Math.PI/2;
+        
+        northC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        southC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        eastC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        westC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+
+        eastC.rotation.order = 'YXZ';
+        westC.rotation.order = 'YXZ';
+        
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(northC);
+            root.add(northC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(southC);
+            root.add(southC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(eastC);
+            root.add(eastC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(westC);
+            root.add(westC);
+        }
+        
+        return root;
+    }
+    
+    function makeBuilding(diameter, height, color, backColor) {
         var root = new THREE.Object3D();
         var wD = 2;
 
@@ -238,8 +285,8 @@ function makeWorld() {
         layout.visible = false;
         
         var top; 
-        if(topHeight > 200) {
-            if(Math.random() > 0.4) {
+        if(topHeight > 100) {
+            if(Math.random() > 0.5) {
                     top = makeTower(diameter, topHeight, diameter, color, backColor);
             } else {
                     top = makeModernBuilding(diameter, topHeight, diameter, color, backColor);
@@ -429,10 +476,10 @@ function makeWorld() {
         var bottom = 0;
         var ledgeHeight = Random.integer(1,10);
         var ledgeHang = Random.integer(5,20);
-        var narrowingInterval = Random.integer(1,10);
+        var narrowingInterval = Random.choose([Random.integer(1,5),Number.MAX]);
         //var ledgeColor = choose([0xff0000,0x00ff00,0x0000ff, 0xffff00, 0x00ffff, 0xff00ff]);
         //var tierColor = choose([0xff0000,0x00ff00,0x0000ff, 0xffff00, 0x00ffff, 0xff00ff]);
-        var tierFraction = Random.integer(2,Math.max(2,Math.floor(height/100)));
+        var tierFraction = Random.integer(2,Math.max(2,Math.floor(height/10)));
         var pointy = Math.random() > 0.5;
         var hasCorners = Math.random() > 0.5;
         
@@ -443,8 +490,8 @@ function makeWorld() {
         var tiers = 0;
         while(true) {
             var remainingHeight = height-bottom;
-            var sectionHeight = Math.max(remainingHeight/tierFraction, 20);
-            if(remainingHeight < 20) sectionHeight = remainingHeight;
+            var sectionHeight = Math.max(remainingHeight/tierFraction, 30);
+            if(remainingHeight < 30) sectionHeight = remainingHeight;
             var section = makeBox(width, sectionHeight, depth, color, backColor);
             section.position.y = bottom;
             root.add(section);
@@ -498,14 +545,14 @@ function makeWorld() {
     function makeModernBuilding(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
         var bottom = 0;
-        var ledgeHeight = Random.integer(2,10);
+        var ledgeHeight = Random.integer(2,5);
         var ledgeHang = Random.integer(5,15);
         
-        var windowHeight = Random.integer(10, 20);
+        var windowHeight = Random.integer(10, 30);
         var wallHeight = Random.integer(3,10);
         
         while(bottom < height) {
-            var window = makeBox(width, windowHeight, depth, 0x0000ff, 0x000088);
+            var window = makeBox(width, windowHeight, depth, color, color&0x444444);
             window.position.y = bottom;
             bottom += windowHeight;
             root.add(window);
