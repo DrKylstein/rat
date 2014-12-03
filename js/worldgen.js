@@ -1,8 +1,20 @@
-function makeWorld(ENV_COLORS, BUILDING_COLORS) {
+function makeWorld() {
     var doors = [];
     var portalDoors = [];
     var buildings = [];
-    var devices = [];
+    var terminals = [];
+    var spinners = [];
+    var colliders = [];
+    var obstacleNodes = [];
+    var obstacles = [];
+    var pathers = [];
+    var stunnable = [];
+    var rogueBots = [];
+    var bots = [];
+    var botMarkers = [];
+    var terminals = [];
+    var potentialTerminals = [];
+    var map;
     
     
     function makeBlock(width, depth, lotSize, height, bx,bz) {
@@ -474,9 +486,7 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
     gridTex.wrapT = THREE.RepeatWrapping;
     gridTex.anisotropy = 8;
     
-    var intersections = {};
         
-    var obstacleNodes = [];
             
     var world; 
         
@@ -510,7 +520,6 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
     root.add(pavement);
     obstacleNodes.push(pavement);
     
-    
     for(var z = 0; z < zBlocks; z++) {
         for(var x = 0; x < xBlocks; x++) {
             var height = Math.pow(Math.max(Math.abs(x-xBlocks/2)/xBlocks,Math.abs(z-xBlocks/2)/zBlocks),heightPower)*heightFactor;
@@ -520,10 +529,14 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
             root.add(block);
         }
     }
-    for(var z = 0; z < zBlocks; z++) {
+    var intersections = {};
+    for(var z = 0; z <= zBlocks; z++) {
         intersections[z] = {};
-        for(var x = 0; x < xBlocks; x++) {
-            intersections[z][x] = (new THREE.Vector3(x*blockWidth + lotSize*xLots - roadSize/2, 0.0, z*blockDepth + lotSize*zLots - alleySize/2 - roadSize/2));
+        for(var x = 0; x <= xBlocks; x++) {
+            intersections[z][x] = (new THREE.Vector3(x*blockWidth + roadSize/2, 0.0, z*blockDepth + alleySize/2));
+            /*var marker = makeMarker();
+            marker.position.set(intersections[z][x].x, intersections[z][x].z, 1);
+            map.add(marker);*/
         }
     }
     world = root;
@@ -555,7 +568,482 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         return box;
     });
 
+
+
+    var startRoom;
+
+    var eyeKey = {
+        name:'eye key',
+        description:[
+            'Unlock a flying robot.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+
+    var mcp = [
+        {
+            name:'MCP 1/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        },
+        {
+            name:'MCP 2/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        },
+        {
+            name:'MCP 3/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        }
+    ];
+
+    var programs = [
+        eyeKey,
+        {
+            name:'foo.txt',
+            description:[
+                'foo', 
+                'bar',
+                'baz',
+                'frob',
+                '',
+                '',
+                ''
+            ]
+        },
+        mcp[0],
+        mcp[1],
+        mcp[2]
+    ];
+    var hackerKey = {
+        name:'hacker key',
+        description:[
+            'Unlock a robot that can', 
+            'hack computers.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+    };
+        
+    Random.shuffle(programs);
+    Random.shuffle(buildings);
+
+    buildings.forEach(function(building, i) {
+        var room = Random.choose(building.leafRooms);
+        var mainframe = makeMainframe();
+        var back = room.userData.size.z/2 - 5;
+        mainframe.position.z -= back;
+        room.add(mainframe);
+        obstacles.push(new THREE.Box3().setFromObject(mainframe));
+        
+        if(i == 0) {
+            terminals.push({
+                id:mainframe.id,
+                body:mainframe, 
+                name:"Cyber 1", 
+                contents:[hackerKey], 
+                locked:false,
+                hasScreen:true,
+                readOnly: 1
+            }); 
+            startRoom = Random.choose(building.rooms.filter(function(r2){
+                return r2.id != room.id;
+            }));
+            building.rooms.splice(building.rooms.indexOf(startRoom), 1);
+            building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
+        } else {
+            terminals.push({
+                id:mainframe.id,
+                body:mainframe, 
+                name:"Cyber "+(i+2), 
+                contents:[programs[i%programs.length]], 
+                locked:true,
+                hasScreen:true,
+                readOnly: 1
+            });
+        }
+        
+        building.rooms.splice(building.rooms.indexOf(room),1);
+        building.leafRooms.splice(building.leafRooms.indexOf(room),1);
+    });
+
+    buildings.forEach(function(building){
+        building.leafRooms.forEach(function(room){
+            if(room.userData.size.x >= 20 && room.userData.size.z >= 20) {
+                var table = makeTable();
+                table.position.z = -room.userData.size.z/2 + 10/2;
+                room.add(table);
+                obstacles.push(new THREE.Box3().setFromObject(table));
+            }
+            building.rooms.splice(building.rooms.indexOf(room),1);
+        });
+        building.rooms.forEach(function(room){
+            if(room.userData.size.x >= 40 && room.userData.size.z >= 30) {
+                var table = makeTable();
+                room.add(table);
+                obstacles.push(new THREE.Box3().setFromObject(table));
+            }
+        });
+    });
+
+
+    function makeMarker() {
+        var box = makeBox(50,50,1,SCREEN_COLORS[0],SCREEN_COLORS[0]);
+        box.children[0].position.y = 0;
+        return box;
+    }
+
+    function makeRizzo() {
+        var root= new THREE.Object3D();
+        var body = makeBox(9,5,9, 0x0000ff, 0x000088);
+        pointify(body.children[0].geometry, 5, 1,1);
+        root.add(body);
+        var eye = makeBox(2,1,1, 0xff0000, 0xffff00);
+        eye.position.y = 2;
+        eye.position.z = -2;
+        root.add(eye);
+        
+        var camera = new THREE.Object3D();
+        root.add(camera);
+        camera.position.y = 5;
+        return {body:root, eye:camera};
+    }
+
+
+    function makeIgor() {
+        var root = new THREE.Object3D();
+        var base = makeBox(4,2,4, 0x0000ff, 0x000088);
+        var torso = makeBox(8,7,6, 0x0000ff, 0x000088);
+        var head = makeBox(7,4,7, 0x0000ff, 0x000088);
+        head.rotation.y = Math.PI/4;
+        var eye = makeBox(2,1,1, 0x00ff00, 0x002200);
+        var camera = new THREE.Object3D();
+        
+        pointify(torso.children[0].geometry, 9, 0.5, 0.25);
+        pointify(base.children[0].geometry, 2, 0.25, 0.25);
+        pointify(head.children[0].geometry, 4, 1, 1);
+        torso.children[0].rotation.x = Math.PI;
+        
+        torso.position.y = 2;
+        head.position.y = 2+7;
+        eye.position.y = 2+7+2;
+        eye.position.z = -1.5;
+        camera.position.y = 2+7+1;
+        
+        root.add(base);
+        root.add(torso);
+        root.add(head);
+        root.add(eye);
+        root.add(camera);
+        
+        return {body:root, eye:camera};
+    }
+
+    function makeGuard() {
+        var root = new THREE.Object3D();
+        
+        var torso = makeBox(7,8,5, 0xff0000, 0x888888);
+        pointify(torso.children[0].geometry, 10, 0.5, 0.5);
+        torso.children[0].rotation.x = Math.PI;
+        root.add(torso);
+        
+        var gun = makeBox(3,3,3, 0xff0000, 0x880000);
+        pointify(gun.children[0].geometry, 3, 0, 1);
+        gun.children[0].rotation.x = Math.PI*1/8;
+        gun.position.z = -2;
+        gun.position.y = 2;
+        root.add(gun);
+        
+        var head = makeBox(7,3,5, 0xff0000, 0x880000);
+        pointify(head.children[0].geometry, 3, 0.5, 0.5);
+        head.position.y = 8;
+        root.add(head);
+
+        var eye = makeBox(2,1,1, 0xffff00, 0x884400);
+        var camera = new THREE.Object3D();
+        eye.position.y = 8+2;
+        eye.position.z = -1.5;
+        camera.position.y = 8+1;
+
+        root.add(eye);
+        root.add(camera);
+        
+        return {body:root, eye:camera};
+    }
+
+
+    function spawnGuard(position, patrol) {
+        var shape = makeGuard();
+        shape.body.position.copy(position);
+        pathers.push({
+            id:shape.id,
+            body:shape.body,
+            speed:20,
+            face:true,
+            index:0,
+            path:patrol
+        });
+        world.add(shape.body);
+    }
     
-    return {doors:doors, world:world, buildings:buildings, intersections:intersections, 
-        portalDoors:portalDoors, obstacles:obstacles, map:map};
+    var sx = Random.integer(0,xBlocks-1);
+    var sz = Random.integer(0,zBlocks-1);
+
+    spawnGuard(intersections[sx][sz],
+        [
+            intersections[sx][sz],
+            intersections[sx+1][sz],
+            intersections[sx+1][sz+1],
+            intersections[sx][sz+1]
+        ]
+    );
+
+    var startPos = new THREE.Vector3(0,0,0);
+    startRoom.localToWorld(startPos);
+    (function(){
+        var shape = makeRizzo();
+        var id = shape.body.id;
+        var nick = Random.choose(['Rizzo', 'Chuckie', 'Jerry']);
+        shape.body.position.copy(startPos);
+        world.add(shape.body);
+        terminals.push({
+            id:id,
+            name:nick, 
+            body:shape.body, 
+            contents:[],
+            locked:false,
+            hasScreen:false
+        });
+        bots.push({
+            id:id,
+            body:shape.body, 
+            eye:shape.eye, 
+            radius:3, //used for shooting, should move
+            canShoot:true,
+            speed:400.0,
+            vspeed:0.0,
+            spawn: startPos,
+            name:'R.A.T.',
+            nick:nick
+        });
+        colliders.push({
+            id:id, 
+            body:shape.body,
+            radius:3,
+            g:9.8,
+            dy:0
+        });
+        
+        botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
+        
+    })();
+
+    (function(){
+        var shape = (function() {
+            var body = new THREE.Object3D();
+            var eye = new THREE.Object3D();
+            
+            var top = makeBox(5,5,5, 0xff0000,0xffff00);
+            pointify(top.children[0].geometry, 5, 1, 1);
+            var bottom = makeBox(5,5,5, 0xff0000,0xffff00);
+            pointify(bottom.children[0].geometry, 5, 1, 1);
+            bottom.rotation.x = Math.PI;
+            top.position.y = 5;
+            bottom.position.y = 5;
+
+            eye.add(top);
+            eye.add(bottom);
+            
+            var rotors = new THREE.Object3D();
+            
+            for(var i = 0; i < 4; i++) {
+                var root = new THREE.Object3D();
+                var rotor = makeBox(10,1,5, 0xff0000,0xffff00);
+                rotor.position.x = 12;
+                root.rotation.y = Math.PI*i/2;
+                root.add(rotor);
+                rotors.add(root);
+            }
+            rotors.position.y = 5;
+            spinners.push(rotors);
+            eye.add(rotors);
+            
+            body.add(eye);
+            
+            return {body:body,eye:eye};
+        })();
+        var id = shape.body.id;
+        
+        var sx = Random.integer(0,xBlocks-1);
+        var sz = Random.integer(0,zBlocks-1);
+
+        shape.body.position.y = 10;
+        shape.body.position.add(intersections[sx][sz]);
+        world.add(shape.body);
+        var nick = Random.choose(['Amelia', 'Kiki', 'Anneka', 'Glenda']);
+        
+        colliders.push({
+            id:id, 
+            body:shape.body,
+            radius:7,
+            g:0,
+            dy:0
+        });
+        rogueBots.push({
+            id:id,
+            body:shape.body, 
+            eye:shape.eye,
+            speed:400.0,
+            vspeed:400.0,
+            spawn: intersections[sx][sz],
+            resetOwner: true,
+            name:'Flying Eye',
+            nick:nick
+        });
+        pathers.push({
+            id:id,
+            body:shape.body,
+            speed:30,
+            face:false,
+            index:0,
+            device:bot,
+            path:[
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz]),
+                intersections[sx][sz],
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz]),
+            
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz+1]),
+                intersections[sx][sz+1],
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz+1]),
+            
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz+1]),
+                intersections[sx+1][sz+1],
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz+1]),
+                
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz]),
+                intersections[sx+1][sz],
+                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz])
+            ]
+        });
+        stunnable.push({id:id, body:shape.body});
+        potentialTerminals.push({
+            id:id,
+            name:nick, 
+            body:shape.body, 
+            contents:[], 
+            locked:true, 
+            hasScreen:false,
+            key:eyeKey
+        });
+        botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
+    })();
+
+    (function(){
+        var shape = makeIgor();
+        var id = shape.body.id;
+        
+        var nick = Random.choose(['Conky', 'Igor', 'Data']);
+        
+        var sx = Random.integer(0,xBlocks-1);
+        var sz = Random.integer(0,zBlocks-1);
+        
+        world.add(shape.body);
+        shape.body.position.copy(intersections[sx][sz]);
+        rogueBots.push({
+            id:id,
+            body:shape.body,
+            eye:shape.eye,
+            hacker:true,
+            speed:200.0,
+            vspeed:0.0,
+            spawn:intersections[sx][sz],
+            resetOwner: true,
+            name:'Hacker',
+            nick:nick
+        });
+        
+        
+        pathers.push({
+            id:id,
+            body:shape.body, 
+            face:true,
+            path:[
+                intersections[sx][sz],
+                intersections[sx+1][sz],
+                intersections[sx+1][sz+1],
+                intersections[sx][sz+1]
+            ],
+            index:0,
+            speed:20,
+            device:bot
+        })
+        stunnable.push({id:id, body:shape.body});
+        potentialTerminals.push({
+            id:id,
+            name:nick, 
+            body:shape.body, 
+            contents:[], 
+            locked:true, 
+            hasScreen:false,
+            key:hackerKey
+        });
+        colliders.push({
+            id:id, 
+            body:shape.body,
+            radius:4,
+            g:9.8,
+            dy:0
+        });
+        botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
+    })();
+        
+    botMarkers.forEach(function(marker){
+        map.add(marker.blip);
+    });
+
+    return {
+        doors:doors, 
+        world:world, 
+        buildings:buildings, 
+        intersections:intersections, 
+        portalDoors:portalDoors, 
+        obstacles:obstacles, 
+        map:map, bots:bots, 
+        botMarkers:botMarkers,
+        spinners:spinners,
+        terminals:terminals,
+        colliders:colliders,
+        pathers:pathers,
+        stunnable:stunnable
+    };
 }
