@@ -1,10 +1,8 @@
 issues:
 sometimes captured robot has inverted camera angle
-18% spent raycasting for ground (merge with lateral aabbs?)
 
 features:
-scanlines, noise
-robot class names and randomized instance names
+map
 more decor
 distinctive start building
 match interesting items to interesting buildings?

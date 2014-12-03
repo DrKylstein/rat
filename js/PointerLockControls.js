@@ -6,13 +6,14 @@ THREE.PointerLockControls = function (camera, body, eye) {
 
 	var scope = this;
 
-	camera.rotation.set( 0, 0, 0 );
+	
 	
 	var yawObject, pitchObject, speed, vspeed;
 	this.attach = function(body, eye, sp, vs) {
 		yawObject = body;
 		pitchObject = eye;
 		pitchObject.add(camera);
+		camera.rotation.set( 0, 0, 0 );
 		speed = sp;
 		vspeed = vs;
 	}
@@ -27,11 +28,6 @@ THREE.PointerLockControls = function (camera, body, eye) {
 	var moveUp = false;
 	var moveDown = false;
 	
-	this.objectInFront = false;
-	this.objectInBack = false;
-	this.objectOnLeft = false;
-	this.objectOnRight = false;
-
 	this.velocity = new THREE.Vector3();
 
 	var PI_2 = Math.PI / 2;
@@ -180,28 +176,18 @@ THREE.PointerLockControls = function (camera, body, eye) {
 	}();
 	
 	this.update = function (delta) {
-
 		if ( scope.enabled === false ) return;
 
 		this.velocity.x -= this.velocity.x * 10.0 * delta;
 		this.velocity.z -= this.velocity.z * 10.0 * delta;
 		this.velocity.y -= this.velocity.y * 10.0 * delta;
 		
-		if ( this.velocity.z < 0 && this.objectInFront) this.velocity.z = 0;
-		if ( this.velocity.z > 0 && this.objectInBack ) this.velocity.z = 0;
-		if ( this.velocity.x < 0 && this.objectOnLeft) this.velocity.x = 0;
-		if ( this.velocity.x > 0 && this.objectOnRight) this.velocity.x = 0;
-
-		
-		if ( moveForward && !this.objectInFront) this.velocity.z -= speed * delta;
-		if ( moveBackward && !this.objectInBack ) this.velocity.z += speed * delta;
-		if ( moveLeft && !this.objectOnLeft) this.velocity.x -= speed * delta;
-		if ( moveRight && !this.objectOnRight) this.velocity.x += speed * delta;
-
-
+		if ( moveForward) this.velocity.z -= speed * delta;
+		if ( moveBackward) this.velocity.z += speed * delta;
+		if ( moveLeft) this.velocity.x -= speed * delta;
+		if ( moveRight) this.velocity.x += speed * delta;
 		if (moveDown) this.velocity.y -= vspeed * delta;
 		if (moveUp) this.velocity.y += vspeed * delta;
-
 		
 		yawObject.translateX( this.velocity.x * delta );
 		yawObject.translateY( this.velocity.y * delta ); 

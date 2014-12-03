@@ -131,10 +131,10 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
         var light = makeBox(3,3,3, 0x00ff00, 0x00ff00);
         light.position.y = 30;
         root.add(light);
-        if(Math.random() > 0.75) {
+        /*if(Math.random() > 0.75) {
             root.rotation.x = Random.normal(0, Math.PI/8);
             root.rotation.z = Random.normal(0, Math.PI/8);
-        }
+        }*/
         
         obstacleNodes.push(root);
         

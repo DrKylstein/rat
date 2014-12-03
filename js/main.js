@@ -304,7 +304,7 @@ spawnGuard(intersections[-2][-2],
 );
 
 var startPos = new THREE.Vector3(0,0,0);
-//startRoom.localToWorld(startPos);
+startRoom.localToWorld(startPos);
 (function(){
     var shape = makeRizzo();
     var id = shape.body.id;
@@ -882,8 +882,10 @@ function handleBotSaveDelete(index) {
 
 
 var v = new THREE.Vector3(0,0,0);
+var m = new THREE.Matrix4();
 var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
+var UP = new THREE.Vector3(0,1,0);
 var DOWN = new THREE.Vector3(0,-1,0);
 var interfaceAction = null;
 var botbox = new THREE.Box3();
@@ -895,7 +897,6 @@ bots[0].body.position.copy(startPos);
 function update(time) {
     var delta = Math.min(( time - prevTime ) / 1000, 0.05);
         
-    //culling
     portalDoors.forEach(function(portal){
         v.copy(bot.body.position);
         portal.door.worldToLocal(v);
@@ -988,26 +989,27 @@ function update(time) {
             }
         });
         
-        
-        pathers.forEach(function(mover){
-            if(mover.body.position.distanceTo(mover.path[mover.index]) < 1) {
-                mover.index = (mover.index+1) % mover.path.length;
+        pathers.forEach(function(pather){
+            if(pather.body.position.distanceTo(pather.path[pather.index]) < 1) {
+                pather.index = (pather.index+1) % pather.path.length;
             }
             
-            v.subVectors(mover.path[mover.index], mover.body.position);
+            v.subVectors(pather.path[pather.index], pather.body.position);
             v.normalize();
             
-            if(mover.face) {
-                mover.body.lookAt(mover.path[mover.index]);
-                mover.body.rotation.y += Math.PI;
+            if(pather.face) {
+                m.lookAt(pather.body.position, pather.path[pather.index], UP);
+                //m.setPosition(pather.body.position);
+                pather.body.rotation.setFromRotationMatrix(m);
+                //pather.body.lookAt(pather.path[pather.index]);
+                //pather.body.rotation.y += Math.PI;
             }
             
-            v.multiplyScalar(mover.speed*delta);
-            mover.body.position.add(v);
+            v.multiplyScalar(pather.speed*delta);
+            pather.body.position.add(v);
         });
         
         
-        //stunned bots
         stunned.forEach(function(stunned){
             stunned.time -= delta;
         });
@@ -1028,7 +1030,6 @@ function update(time) {
         });
         
         
-        //projectiles
         var deadProjectiles = [];
         projectiles.forEach(function(proj){
             raycaster.near = 0;
@@ -1078,7 +1079,6 @@ function update(time) {
         });
         
         
-        //collsion
         colliders.forEach(function(obj){ 
             obj.dy -= obj.g*10.0*delta;
             botbox.min.set(obj.body.position.x-obj.radius, obj.body.position.y, obj.body.position.z-obj.radius);
@@ -1102,19 +1102,19 @@ function update(time) {
                     
                     if(ld < rd && ld < md && ld < pd && ld < td && ld < bd) {
                         obj.body.position.x = box.min.x - obj.radius - 0.1;
-                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                        if(obj.id == bot.id) noiseLevel = Math.min(1.0,noiseLevel+0.5);
                     }
                     if(rd < ld && rd < pd && rd < md && rd < td && rd < bd) {
                         obj.body.position.x = box.max.x + obj.radius + 0.1;
-                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                        if(obj.id == bot.id) noiseLevel = Math.min(1.0,noiseLevel+0.5);
                     }
                     if(md < pd && md < ld && md < rd && md < td && md < bd) {
                         obj.body.position.z = box.min.z - obj.radius - 0.1;
-                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                        if(obj.id == bot.id) noiseLevel = Math.min(1.0,noiseLevel+0.5);
                     }
                     if(pd < md && pd < ld && pd < rd && pd < td && pd < bd) {
                         obj.body.position.z = box.max.z + obj.radius + 0.1;
-                        noiseLevel = Math.min(1.0,noiseLevel+0.5);
+                        if(obj.id == bot.id) noiseLevel = Math.min(1.0,noiseLevel+0.5);
                     }
                     if(bd < pd && bd < ld && bd < rd && bd < td && bd < md) {
                         obj.body.position.y = box.min.y - obj.radius;
@@ -1128,12 +1128,10 @@ function update(time) {
             obj.body.position.y += obj.dy*delta;
         });
         
-        //gun cooldown
         if(cooldown > 0)
             cooldown -= delta;
         
         
-        //radiation damge
         var radiation = Math.floor(Math.max(bot.body.position.lengthManhattan() - 800, 0)/100);
         radBar.set(radiation);
         if(radiation > 1) {
@@ -1156,7 +1154,6 @@ function update(time) {
         }
         
         
-        //repair
         if(bot.damage) {
             damageBar.set(bot.damage);
         } else {
@@ -1164,7 +1161,6 @@ function update(time) {
         }
         
         
-        //die and respawn
         if((bot.damage && bot.damage > 10) || bot.body.position.y < -5) {
             bot.body.position.copy(bot.spawn);
             bot.damage = 0;
@@ -1186,12 +1182,10 @@ function update(time) {
             updateRampaks();
         }
         
-        //player movement
         controls.update(delta);
     }
     
     
-    //visual effects
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
     if(noiseLevel > 0) {
@@ -1200,25 +1194,6 @@ function update(time) {
     
     
     render(time);
-    
-    
-    //wolrd transforms don't get updated until first render for some reason
-    /*if(time == 0) {
-        obstacles = obstacleNodes.map(function(wall){
-            //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
-            //bbox.update();
-            //scene.add(bbox);
-            var box = new THREE.Box3();
-            box.setFromObject(wall);
-            return box;
-        });
-        startPos.set(0,0,0);
-        startRoom.localToWorld(startPos);
-        bots[0].body.position.copy(startPos);
-        render(time);
-    }*/
-    
-    
     prevTime = time;
     requestAnimationFrame(update);
 } 
