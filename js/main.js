@@ -247,11 +247,13 @@ crosshair.position.z = 1;
 hudScene.add(crosshair);
 crosshair.visible = false;
 
+var VSPACE = 0.015;
+
 world.map.position.z = 1;
 world.map.scale.x *= 0.25;
 world.map.scale.y *= 0.25;
-world.map.position.x = 0.5 - 0.25;
-world.map.position.y = 0.5 - 0.25;
+world.map.position.x = 0.5 - 0.25 - VSPACE;
+world.map.position.y = 0.5 - 0.25 - VSPACE;
 hudScene.add(world.map);
 
 function Bar(height, lineWidth, spacing, length) {
@@ -271,7 +273,6 @@ function Bar(height, lineWidth, spacing, length) {
 
 var BIG_LABEL = 0.05;
 var SMALL_LABEL = 0.04;
-var VSPACE = 0.015;
 var BAR_H = 0.05;
 var BAR_Y = -0.5 + VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
 
@@ -497,7 +498,7 @@ function handleBotSaveDelete(index) {
                     
                     var found = [false,false,false];
                     host.contents.forEach(function(prg){
-                        var id = mcp.indexOf(prg);
+                        var id = world.mcp.indexOf(prg);
                         if(id != -1) found[id] = true;
                     });
                     if(found.every(function(a){return a})) {
@@ -830,11 +831,21 @@ function update(time) {
     world.botMarkers.forEach(function(marker){
         marker.blip.position.x = marker.body.position.x;
         marker.blip.position.y = marker.body.position.z;
-        if(marker.id == bot.id && blinkTime > 0.25) {
-            marker.blip.visible = !marker.blip.visible;
+        
+        marker.blip.visible = (
+            (blinkTime > 0.25 && marker.id == bot.id) || 
+            (marker.id != bot.id && client.contents.indexOf(world.prgRadar) != -1)
+        )/* && world.indoors.every(function(box){
+            return !box.containsPoint(marker.body.position);
+        })*/;
+            
+        if(blinkTime > 0.5)
             blinkTime = 0;
-        }
     });
+    world.mapDetail.visible = client.contents.indexOf(world.prgMap) != -1;
+    world.map.visible = world.indoors.every(function(box){
+        return !box.containsPoint(bot.body.position);
+    })
     compass.rotation.y = bot.body.rotation.y;
     compass.rotation.x = bot.eye.rotation.x;
     if(noiseLevel > 0) {

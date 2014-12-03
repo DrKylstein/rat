@@ -268,7 +268,7 @@ function makeWorld() {
             backmostPos = Math.min(bound.min.y,backmostPos);
         });
         
-        var meta = {rooms:[], leafRooms:[], obj:root};
+        var meta = {rooms:[], leafRooms:[], obj:root, size:new THREE.Vector3(width, height, depth)};
         
         areas.forEach(function(area, i){
             var room = new THREE.Object3D();
@@ -548,15 +548,17 @@ function makeWorld() {
     
     map.add(mapbg);
     
+    var mapDetail = new THREE.Object3D();
+    
     buildings.forEach(function(building){
         var box = makeBox(150,150,1,0x00ff00, 0x00ff00);
         box.children[0].position.y = 0;
         building.obj.localToWorld(box.position);
         box.position.y = box.position.z;
         box.position.z = 1;
-        map.add(box);
+        mapDetail.add(box);
     });
-    
+    map.add(mapDetail);
     map.scale.set(1/cityWidth, 1/cityDepth, 1);
     
     obstacles = obstacleNodes.map(function(wall){
@@ -568,9 +570,25 @@ function makeWorld() {
         return box;
     });
 
+    var indoors = buildings.map(function(building){
+        var pos = new THREE.Vector3(0,0,0);
+        building.obj.localToWorld(pos);
+        return new THREE.Box3().setFromCenterAndSize(pos, building.size);
+    });
 
-
-    var startRoom;
+    
+    var hackerKey = {
+        name:'hacker key',
+        description:[
+            'Unlock a robot that can', 
+            'hack computers.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+    };
 
     var eyeKey = {
         name:'eye key',
@@ -585,6 +603,32 @@ function makeWorld() {
         ]
     };
 
+    var radar = {
+        name:'Radar',
+        description:[
+            'See other robots on the',
+            'map.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+    
+    var prgMap = {
+        name:'Map',
+        description:[
+            'Shows a map of the city',
+            'on the GPS display.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+    
     var mcp = [
         {
             name:'MCP 1/3',
@@ -625,40 +669,20 @@ function makeWorld() {
     ];
 
     var programs = [
+        hackerKey,
         eyeKey,
-        {
-            name:'foo.txt',
-            description:[
-                'foo', 
-                'bar',
-                'baz',
-                'frob',
-                '',
-                '',
-                ''
-            ]
-        },
+        radar,
+        prgMap,
         mcp[0],
         mcp[1],
         mcp[2]
     ];
-    var hackerKey = {
-        name:'hacker key',
-        description:[
-            'Unlock a robot that can', 
-            'hack computers.',
-            '',
-            '',
-            '',
-            '',
-            ''
-        ]
-    };
         
-    Random.shuffle(programs);
     Random.shuffle(buildings);
-
-    buildings.forEach(function(building, i) {
+        
+    var startRoom;
+    programs.forEach(function(program, i) {
+        var building = buildings[i];
         var room = Random.choose(building.leafRooms);
         var mainframe = makeMainframe();
         var back = room.userData.size.z/2 - 5;
@@ -667,31 +691,23 @@ function makeWorld() {
         obstacles.push(new THREE.Box3().setFromObject(mainframe));
         
         if(i == 0) {
-            terminals.push({
-                id:mainframe.id,
-                body:mainframe, 
-                name:"Cyber 1", 
-                contents:[hackerKey], 
-                locked:false,
-                hasScreen:true,
-                readOnly: 1
-            }); 
             startRoom = Random.choose(building.rooms.filter(function(r2){
                 return r2.id != room.id;
             }));
             building.rooms.splice(building.rooms.indexOf(startRoom), 1);
             building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
-        } else {
-            terminals.push({
-                id:mainframe.id,
-                body:mainframe, 
-                name:"Cyber "+(i+2), 
-                contents:[programs[i%programs.length]], 
-                locked:true,
-                hasScreen:true,
-                readOnly: 1
-            });
         }
+        
+        terminals.push({
+            id:mainframe.id,
+            body:mainframe, 
+            name:"Cyber "+(i+1), 
+            contents:[program], 
+            locked:i>0,
+            hasScreen:true,
+            readOnly: 1
+        });
+        
         
         building.rooms.splice(building.rooms.indexOf(room),1);
         building.leafRooms.splice(building.leafRooms.indexOf(room),1);
@@ -721,52 +737,6 @@ function makeWorld() {
         var box = makeBox(50,50,1,SCREEN_COLORS[0],SCREEN_COLORS[0]);
         box.children[0].position.y = 0;
         return box;
-    }
-
-    function makeRizzo() {
-        var root= new THREE.Object3D();
-        var body = makeBox(9,5,9, 0x0000ff, 0x000088);
-        pointify(body.children[0].geometry, 5, 1,1);
-        root.add(body);
-        var eye = makeBox(2,1,1, 0xff0000, 0xffff00);
-        eye.position.y = 2;
-        eye.position.z = -2;
-        root.add(eye);
-        
-        var camera = new THREE.Object3D();
-        root.add(camera);
-        camera.position.y = 5;
-        return {body:root, eye:camera};
-    }
-
-
-    function makeIgor() {
-        var root = new THREE.Object3D();
-        var base = makeBox(4,2,4, 0x0000ff, 0x000088);
-        var torso = makeBox(8,7,6, 0x0000ff, 0x000088);
-        var head = makeBox(7,4,7, 0x0000ff, 0x000088);
-        head.rotation.y = Math.PI/4;
-        var eye = makeBox(2,1,1, 0x00ff00, 0x002200);
-        var camera = new THREE.Object3D();
-        
-        pointify(torso.children[0].geometry, 9, 0.5, 0.25);
-        pointify(base.children[0].geometry, 2, 0.25, 0.25);
-        pointify(head.children[0].geometry, 4, 1, 1);
-        torso.children[0].rotation.x = Math.PI;
-        
-        torso.position.y = 2;
-        head.position.y = 2+7;
-        eye.position.y = 2+7+2;
-        eye.position.z = -1.5;
-        camera.position.y = 2+7+1;
-        
-        root.add(base);
-        root.add(torso);
-        root.add(head);
-        root.add(eye);
-        root.add(camera);
-        
-        return {body:root, eye:camera};
     }
 
     function makeGuard() {
@@ -831,7 +801,22 @@ function makeWorld() {
     var startPos = new THREE.Vector3(0,0,0);
     startRoom.localToWorld(startPos);
     (function(){
-        var shape = makeRizzo();
+        var shape = (function() {
+            var root= new THREE.Object3D();
+            var body = makeBox(9,5,9, 0x0000ff, 0x000088);
+            pointify(body.children[0].geometry, 5, 1,1);
+            root.add(body);
+            var eye = makeBox(2,1,1, 0xff0000, 0xffff00);
+            eye.position.y = 2;
+            eye.position.z = -2;
+            root.add(eye);
+            
+            var camera = new THREE.Object3D();
+            root.add(camera);
+            camera.position.y = 5;
+            return {body:root, eye:camera};
+        })();
+        
         var id = shape.body.id;
         var nick = Random.choose(['Rizzo', 'Chuckie', 'Jerry']);
         shape.body.position.copy(startPos);
@@ -969,7 +954,35 @@ function makeWorld() {
     })();
 
     (function(){
-        var shape = makeIgor();
+        var shape = (function makeIgor() {
+            var root = new THREE.Object3D();
+            var base = makeBox(4,2,4, 0x0000ff, 0x000088);
+            var torso = makeBox(8,7,6, 0x0000ff, 0x000088);
+            var head = makeBox(7,4,7, 0x0000ff, 0x000088);
+            head.rotation.y = Math.PI/4;
+            var eye = makeBox(2,1,1, 0x00ff00, 0x002200);
+            var camera = new THREE.Object3D();
+            
+            pointify(torso.children[0].geometry, 9, 0.5, 0.25);
+            pointify(base.children[0].geometry, 2, 0.25, 0.25);
+            pointify(head.children[0].geometry, 4, 1, 1);
+            torso.children[0].rotation.x = Math.PI;
+            
+            torso.position.y = 2;
+            head.position.y = 2+7;
+            eye.position.y = 2+7+2;
+            eye.position.z = -1.5;
+            camera.position.y = 2+7+1;
+            
+            root.add(base);
+            root.add(torso);
+            root.add(head);
+            root.add(eye);
+            root.add(camera);
+            
+            return {body:root, eye:camera};
+        })();
+        
         var id = shape.body.id;
         
         var nick = Random.choose(['Conky', 'Igor', 'Data']);
@@ -1040,7 +1053,7 @@ function makeWorld() {
         intersections:intersections, 
         portalDoors:portalDoors, 
         obstacles:obstacles, 
-        map:map, bots:bots, 
+        map:map, 
         botMarkers:botMarkers,
         spinners:spinners,
         terminals:terminals,
@@ -1050,6 +1063,11 @@ function makeWorld() {
         stunnable:stunnable,
         safeZone:safeZone,
         bots:bots,
-        rogueBots:rogueBots
+        rogueBots:rogueBots,
+        prgRadar:radar,
+        prgMap:prgMap,
+        mapDetail:mapDetail,
+        mcp:mcp,
+        indoors:indoors
     };
 }
