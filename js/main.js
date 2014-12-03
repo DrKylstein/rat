@@ -18,10 +18,15 @@ function findById(arr, id) {
 var FAR = 800;
 
 var camera, hudCamera, overlayCamera;
-var wsize;
 var renderer = new THREE.WebGLRenderer({antialias:true}); 
 var scene = new THREE.Scene(); 
 var hudScene = new THREE.Scene();
+var bottomHud = new THREE.Object3D();
+var topHud = new THREE.Object3D();
+var centerHud = new THREE.Object3D();
+hudScene.add(bottomHud);
+hudScene.add(topHud);
+hudScene.add(centerHud);
 var overlayScene = new THREE.Scene();
 renderer.autoClear = false;
 var canvas = renderer.domElement;
@@ -31,12 +36,13 @@ document.body.appendChild(canvas);
 (function initCameras() {
     var width = window.innerWidth;
     var height = window.innerHeight;
-    var min = Math.min(width, height);
-    wsize = [width/min, height/min];
     
     camera = new THREE.PerspectiveCamera( 75, width / height, 0.1, FAR ); 
-    hudCamera = new THREE.OrthographicCamera(-(wsize[0])/2, (wsize[0])/2, (wsize[1])/2, -(wsize[1])/2, 1, 10);
-    hudCamera.position.z = 10;    
+    hudCamera = new THREE.OrthographicCamera(-0.5, 0.5, height/width/2, -height/width/2, 1, 10);
+    hudCamera.position.z = 10;
+    bottomHud.position.y = -height/width/2;
+    topHud.position.y = height/width/2;
+    centerHud.scale.set(Math.min(1.0, height/width),Math.min(1.0, height/width),1);
     overlayCamera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 10);
     overlayCamera.position.z = 10;
     renderer.setSize(width, height);
@@ -44,17 +50,18 @@ document.body.appendChild(canvas);
 window.onresize = function onWindowResize() {
     var width = window.innerWidth;
     var height = window.innerHeight;
-    var min = Math.min(width, height);
-    wsize = [width/min, height/min];
     
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     
-    hudCamera.left = - (wsize[0]) / 2;
-    hudCamera.right = (wsize[0]) / 2;
-    hudCamera.top = (wsize[1]) / 2;
-    hudCamera.bottom = - (wsize[1]) / 2;
+    hudCamera.left = -0.5;
+    hudCamera.right = 0.5;
+    hudCamera.top = height/width/2;
+    hudCamera.bottom = -height/width/2;
     hudCamera.updateProjectionMatrix();
+    bottomHud.position.y = -height/width/2;
+    topHud.position.y = height/width/2;
+    centerHud.scale.set(Math.min(1.0, height/width),Math.min(1.0, height/width),1);
     
     renderer.setSize(width, height);
 }
@@ -147,6 +154,13 @@ function lockChangeAlert() {
 }
 
 function keydown(event){
+    if(event.keyCode == 0x2D) {
+        client.contents.push(world.prgRadar);
+        client.contents.push(world.prgMap);
+        updateRampaks();
+        return;
+    }
+    
     var fn = event.keyCode - 0x30;
     if(interfaceAction != null) {
         interfaceAction(fn);
@@ -244,7 +258,7 @@ var crosshair = makeLines( SCREEN_COLORS[0], THREE.LinePieces, [
 ]);
 crosshair.scale.set(0.15,0.15,1.0);
 crosshair.position.z = 1;
-hudScene.add(crosshair);
+centerHud.add(crosshair);
 crosshair.visible = false;
 
 var VSPACE = 0.015;
@@ -253,8 +267,8 @@ world.map.position.z = 1;
 world.map.scale.x *= 0.25;
 world.map.scale.y *= 0.25;
 world.map.position.x = 0.5 - 0.25 - VSPACE;
-world.map.position.y = 0.5 - 0.25 - VSPACE;
-hudScene.add(world.map);
+world.map.position.y = - 0.25 - VSPACE;
+topHud.add(world.map);
 
 function Bar(height, lineWidth, spacing, length) {
     var root = new THREE.Object3D();
@@ -274,10 +288,10 @@ function Bar(height, lineWidth, spacing, length) {
 var BIG_LABEL = 0.05;
 var SMALL_LABEL = 0.04;
 var BAR_H = 0.05;
-var BAR_Y = -0.5 + VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
+var BAR_Y = VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
 
 var damageBar = new Bar(BAR_H, 0.01, 0.01, 10);
-hudScene.add(damageBar.display);
+bottomHud.add(damageBar.display);
 damageBar.display.position.set(0.5 - 0.10, BAR_Y, 1);
 damageBar.display.rotation.y = Math.PI;
 var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
@@ -288,12 +302,12 @@ var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
 ]);
 damageSymbol.position.set(0.5 - 0.05, BAR_Y, 1.0);
 damageSymbol.scale.set(BAR_H, BAR_H, 1.0);
-hudScene.add(damageSymbol);
+bottomHud.add(damageSymbol);
 damageBar.set(0);
 
 
 var radBar = new Bar(BAR_H, 0.01, 0.01, 10);
-hudScene.add(radBar.display);
+bottomHud.add(radBar.display);
 radBar.display.position.set(-0.5 + 0.10, BAR_Y, 1);
 var radSymbol = new THREE.Object3D();
 for(var i= 0; i < 3; i++) {
@@ -308,22 +322,22 @@ for(var i= 0; i < 3; i++) {
 }
 radSymbol.position.set(-0.5 + 0.05,  BAR_Y, 1.0);
 radSymbol.scale.set(BAR_H, BAR_H, 1.0);
-hudScene.add(radSymbol);
+bottomHud.add(radSymbol);
 radBar.set(0);
 
 
 var terminalEmulator = new THREE.Object3D();
 (function(){
-    var screen = new THREE.Sprite(new THREE.SpriteMaterial({map:monitor.tex}));
-    screen.scale.set(0.9,0.9*3/4,1.0);
+    var screen = makeBox(0.9,0.9*3/4,1.0, null, monitor.tex);
+    screen.children[0].position.y = 0;
     var bg = makeBox(1.0, 3/4, 0.0, SCREEN_COLORS[0], SCREEN_COLORS[1]);
-    bg.position.y = -0.5*3/4;
+    bg.children[0].position.y = 0;
     terminalEmulator.add(bg);
     terminalEmulator.add(screen);
     
     terminalEmulator.position.z = 2;
     terminalEmulator.position.y = -1.5;
-    hudScene.add(terminalEmulator);
+    centerHud.add(terminalEmulator);
 })();
 
 
@@ -331,9 +345,9 @@ var rampakLabels = [];
 for(var i = 0; i < 4; i++) {
     rampakLabels.push(new Label(BIG_LABEL,SCREEN_COLORS[0]));
     rampakLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
-    rampakLabels[i].sprite.position.y = -0.5 + VSPACE + BIG_LABEL/2;
+    rampakLabels[i].sprite.position.y = VSPACE + BIG_LABEL/2;
     rampakLabels[i].setText('Empty');
-    hudScene.add(rampakLabels[i].sprite);
+    bottomHud.add(rampakLabels[i].sprite);
 }
 function updateRampaks() {
     rampakLabels.forEach(function(rampak, i) {
@@ -349,15 +363,15 @@ var botSubLabels = [];
 for(var i = 0; i < 4; i++) {
     botLabels.push(new Label(BIG_LABEL,SCREEN_COLORS[0]));
     botLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
-    botLabels[i].sprite.position.y = 0.5 - VSPACE - BIG_LABEL/2;
+    botLabels[i].sprite.position.y = -VSPACE - BIG_LABEL/2;
     botLabels[i].setText('');
-    hudScene.add(botLabels[i].sprite);
+    topHud.add(botLabels[i].sprite);
     
     botSubLabels.push(new Label(SMALL_LABEL,SCREEN_COLORS[0]));
     botSubLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
-    botSubLabels[i].sprite.position.y = 0.5 - VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL/2;
+    botSubLabels[i].sprite.position.y = -VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL/2;
     botSubLabels[i].setText('');
-    hudScene.add(botSubLabels[i].sprite);
+    topHud.add(botSubLabels[i].sprite);
 }
 function updateBotLabels() {
     for(var i = 0; i < botLabels.length; i++) {
@@ -378,20 +392,20 @@ var botIndicator = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
 ]);
 botIndicator.scale.set(0.05, 0.025, 1.0);
 botIndicator.position.z = 1;
-botIndicator.position.y = 0.5 - VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL - VSPACE - 0.0125;
+botIndicator.position.y = -VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL - VSPACE - 0.0125;
 botIndicator.rotation.z = Math.PI;
-hudScene.add(botIndicator);
+topHud.add(botIndicator);
 
 
 var pauseMessage = new THREE.Object3D();
 (function(){
-    var paused = makeStaticLabel('[Paused]', 0.1, SCREEN_COLORS[0]);
-    paused.position.y = 0.025;
-    var clickto = makeStaticLabel('Click to continue.', BIG_LABEL, SCREEN_COLORS[0]);
-    clickto.position.y = -0.05;
+    var paused = makeStaticLabel('[Paused]', BIG_LABEL, SCREEN_COLORS[0]);
+    paused.position.y = BIG_LABEL/2;
+    var clickto = makeStaticLabel('Click to continue', SMALL_LABEL, SCREEN_COLORS[0]);
+    clickto.position.y = -SMALL_LABEL/2;
     pauseMessage.add(paused);
     pauseMessage.add(clickto);
-    pauseMessage.position.z = 1;
+    pauseMessage.position.z = 5;
     hudScene.add(pauseMessage);
 })();
 

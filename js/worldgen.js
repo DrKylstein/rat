@@ -551,8 +551,8 @@ function makeWorld() {
     var mapDetail = new THREE.Object3D();
     
     buildings.forEach(function(building){
-        var box = makeBox(150,150,1,0x00ff00, 0x00ff00);
-        box.children[0].position.y = 0;
+        var box = makeLineBox(150,150,0x00ff00, 0x00ff00);
+        //box.children[0].position.y = 0;
         building.obj.localToWorld(box.position);
         box.position.y = box.position.z;
         box.position.z = 1;
