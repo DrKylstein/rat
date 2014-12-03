@@ -270,8 +270,8 @@ var VSPACE = 0.015;
 world.map.position.z = 1;
 world.map.scale.x *= 0.2;
 world.map.scale.y *= 0.2;
-world.map.position.x = 0.5 - VSPACE - 0.2/2;
-world.map.position.y = - VSPACE - 0.2/2;
+world.map.position.x = 0.5 - VSPACE - 0.2;
+world.map.position.y = - VSPACE - 0.2;
 topHud.add(world.map);
 
 function Bar(height, lineWidth, spacing, length) {

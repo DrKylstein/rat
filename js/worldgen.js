@@ -559,7 +559,7 @@ function makeWorld() {
         mapDetail.add(box);
     });
     map.add(mapDetail);
-    map.scale.set(1/cityWidth, 1/cityDepth, 1);
+    map.scale.set(1/Math.max(cityWidth, cityDepth), 1/Math.max(cityWidth, cityDepth), 1);
     
     obstacles = obstacleNodes.map(function(wall){
         //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
@@ -1048,8 +1048,8 @@ function makeWorld() {
 
     var mapAdjusted = new THREE.Object3D();
     mapAdjusted.add(map);
-    map.position.y = 0.5;
-    map.position.x = -0.5;
+    map.position.y = 1.0;
+    map.position.x = (1.0 - Math.min(cityWidth, cityDepth)/Math.max(cityWidth, cityDepth));
     
     return {
         doors:doors, 
