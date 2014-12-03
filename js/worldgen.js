@@ -491,7 +491,7 @@ function makeWorld() {
     var world; 
         
     var map = new THREE.Object3D();
-    
+    map.rotation.x = Math.PI;
         
     var xBlocks = 3;
     var zBlocks = 3;
@@ -1046,6 +1046,11 @@ function makeWorld() {
     
     var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth, 500, cityDepth));
 
+    var mapAdjusted = new THREE.Object3D();
+    mapAdjusted.add(map);
+    map.position.y = 0.5;
+    map.position.x = -0.5;
+    
     return {
         doors:doors, 
         world:world, 
@@ -1053,7 +1058,7 @@ function makeWorld() {
         intersections:intersections, 
         portalDoors:portalDoors, 
         obstacles:obstacles, 
-        map:map, 
+        map:mapAdjusted, 
         botMarkers:botMarkers,
         spinners:spinners,
         terminals:terminals,

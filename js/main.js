@@ -27,6 +27,9 @@ var centerHud = new THREE.Object3D();
 hudScene.add(bottomHud);
 hudScene.add(topHud);
 hudScene.add(centerHud);
+topHud.position.z = 1;
+bottomHud.position.z = 1;
+centerHud.position.z = 1;
 var overlayScene = new THREE.Scene();
 renderer.autoClear = false;
 var canvas = renderer.domElement;
@@ -101,6 +104,7 @@ renderer.setClearColor(ENV_COLORS[1],1);
 var stunned = [];
 var projectiles = [];
 var pausedPathers = [];
+var vecTweens = [];
 var bot = null;
 var client = null;
 var host = null;
@@ -203,7 +207,7 @@ var compass = new THREE.Object3D();
         new THREE.Vector3(0.5, -0.5, 0.0), 
         new THREE.Vector3(0.5, 0.5, 0.0)
     ]);
-    northMarker.position.z = -1;
+    northMarker.position.z = 1;
     northMarker.scale.set(0.025, 0.025, 1.0);
     compass.add(northMarker);
 
@@ -215,8 +219,8 @@ var compass = new THREE.Object3D();
         new THREE.Vector3(0.5, -0.5, 0.0),
         new THREE.Vector3(-0.5, -0.5, 0.0)
     ]);
-    southMarker.position.z = 1;
-    northMarker.rotation.y = Math.PI;
+    southMarker.position.z = -1;
+    southMarker.rotation.y = Math.PI;
     southMarker.scale.set(0.025, 0.025, 1.0);
     compass.add(southMarker);
     
@@ -264,10 +268,10 @@ crosshair.visible = false;
 var VSPACE = 0.015;
 
 world.map.position.z = 1;
-world.map.scale.x *= 0.25;
-world.map.scale.y *= 0.25;
-world.map.position.x = 0.5 - 0.25 - VSPACE;
-world.map.position.y = - 0.25 - VSPACE;
+world.map.scale.x *= 0.2;
+world.map.scale.y *= 0.2;
+world.map.position.x = 0.5 - VSPACE - 0.2/2;
+world.map.position.y = - VSPACE - 0.2/2;
 topHud.add(world.map);
 
 function Bar(height, lineWidth, spacing, length) {
@@ -285,9 +289,9 @@ function Bar(height, lineWidth, spacing, length) {
     }
 }
 
-var BIG_LABEL = 0.05;
-var SMALL_LABEL = 0.04;
-var BAR_H = 0.05;
+var BIG_LABEL = 0.03;
+var SMALL_LABEL = 0.025;
+var BAR_H = 0.03;
 var BAR_Y = VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
 
 var damageBar = new Bar(BAR_H, 0.01, 0.01, 10);
@@ -360,19 +364,21 @@ function updateRampaks() {
 
 var botLabels = [];
 var botSubLabels = [];
+var botBar = new THREE.Object3D();
 for(var i = 0; i < 4; i++) {
     botLabels.push(new Label(BIG_LABEL,SCREEN_COLORS[0]));
     botLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
     botLabels[i].sprite.position.y = -VSPACE - BIG_LABEL/2;
     botLabels[i].setText('');
-    topHud.add(botLabels[i].sprite);
+    botBar.add(botLabels[i].sprite);
     
     botSubLabels.push(new Label(SMALL_LABEL,SCREEN_COLORS[0]));
     botSubLabels[i].sprite.position.x = i*0.25 - 0.5 + 0.25/2;
     botSubLabels[i].sprite.position.y = -VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL/2;
     botSubLabels[i].setText('');
-    topHud.add(botSubLabels[i].sprite);
+    botBar.add(botSubLabels[i].sprite);
 }
+topHud.add(botBar);
 function updateBotLabels() {
     for(var i = 0; i < botLabels.length; i++) {
         if(i < world.bots.length) {
@@ -394,7 +400,7 @@ botIndicator.scale.set(0.05, 0.025, 1.0);
 botIndicator.position.z = 1;
 botIndicator.position.y = -VSPACE - BIG_LABEL - VSPACE - SMALL_LABEL - VSPACE - 0.0125;
 botIndicator.rotation.z = Math.PI;
-topHud.add(botIndicator);
+botBar.add(botIndicator);
 
 
 var pauseMessage = new THREE.Object3D();
@@ -574,8 +580,32 @@ function update(time) {
                 if(host === device) {
                 } else {
                     host = device;
+                    
+                    var tween = findById(vecTweens, botBar.id);
+                    if(tween) {
+                        vecTweens.splice(tween.index, 1);
+                    }
+                    vecTweens.push({
+                        id:botBar.id,
+                        now:botBar.position, 
+                        future:new THREE.Vector3(0,BIG_LABEL+VSPACE,0), 
+                        speed:1.0, 
+                        alpha:0
+                    });
+                    
                     if(!device.hasScreen) {
-                        terminalEmulator.position.y = 0.0;
+                        var tween = findById(vecTweens, terminalEmulator.id);
+                        if(tween) {
+                            vecTweens.splice(tween.index, 1);
+                        }
+                        vecTweens.push({
+                            id:terminalEmulator.id,
+                            now:terminalEmulator.position, 
+                            future:new THREE.Vector3(0,0,2), 
+                            speed:1.0, 
+                            alpha:0
+                        });
+                        //terminalEmulator.position.y = 0.0;
                     }
                     if(!device.locked || (bot.hacker && !device.key) || (device.key && client.contents.indexOf(device.key) != -1)) {
                         monitor.clear();
@@ -611,12 +641,35 @@ function update(time) {
         })) {
             if(host) {
                 if(!host.hasScreen) {
-                    terminalEmulator.position.y = -1.5;
+                    var tween = findById(vecTweens, terminalEmulator.id);
+                    if(tween) {
+                        vecTweens.splice(tween.index, 1);
+                    }
+                    vecTweens.push({
+                        id:terminalEmulator.id,
+                        now:terminalEmulator.position, 
+                        future:new THREE.Vector3(0,-1.5,2), 
+                        speed:1.0,
+                        alpha:0
+                    });
                 }
                 monitor.clear();
                 monitor.println('Logged out.');
                 interfaceAction = null;
                 host = null;
+                
+                var tween = findById(vecTweens, botBar.id);
+                if(tween) {
+                    vecTweens.splice(tween.index, 1);
+                }
+                vecTweens.push({
+                    id:botBar.id,
+                    now:botBar.position, 
+                    future:new THREE.Vector3(0,0,0), 
+                    speed:1.0, 
+                    alpha:0
+                });
+
             }
         }
 
@@ -861,11 +914,19 @@ function update(time) {
         return !box.containsPoint(bot.body.position);
     })
     compass.rotation.y = bot.body.rotation.y;
-    compass.rotation.x = bot.eye.rotation.x;
+    //compass.rotation.x = bot.eye.rotation.x;
     if(noiseLevel > 0) {
         noiseLevel = Math.max(0,noiseLevel - 1.0*delta);
     }
     
+    vecTweens.forEach(function(tween){
+        tween.now.lerp(tween.future, tween.alpha);
+        tween.alpha += tween.speed*delta;
+    });
+    vecTweens.filter(function(tween){return tween.alpha >= 1.0}).forEach(function(tween){
+        vecTweens.splice(findById(vecTweens, tween.id).index, 1);
+        tween.now.copy(tween.future);
+    });
     
     render(time);
     prevTime = time;
