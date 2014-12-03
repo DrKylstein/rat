@@ -430,7 +430,7 @@ function showFiles() {
     monitor.println(host.name+': '+(4-host.contents.length)+' blocks free');
     for(var i = 0; i < 4; i++) {
         if(i < host.contents.length) {
-            monitor.println(' '+(i+1)+'. '+host.contents[i].name);
+            monitor.println(' ['+(i+1)+'] '+host.contents[i].name);
         } else if(i == 0) {
             monitor.println(' --no files--');
         } else {
@@ -440,7 +440,7 @@ function showFiles() {
     monitor.println(client.name+': '+(4-client.contents.length)+' blocks free');
     for(var i = 0; i < 4; i++) {
         if(i < client.contents.length) {
-            monitor.println(' '+(i+5)+'. '+client.contents[i].name);
+            monitor.println(' ['+(i+5)+'] '+client.contents[i].name);
         } else if(i == 0) {
             monitor.println(' --no files--');
         } else {
@@ -460,9 +460,9 @@ function handleFiles(fn) {
         });
         monitor.println('');
         if(host.readOnly && host.readOnly > fn-1) {
-            monitor.println('1Save 0Back');
+            monitor.println('[1] Save [0] Back');
         } else {
-            monitor.println('1Save 2Delete 0Back');
+            monitor.println('[1] Save [2] Delete [0] Back');
         }
         interfaceAction = handleSaveDelete(fn-1);
     }
@@ -474,7 +474,7 @@ function handleFiles(fn) {
             monitor.println(line);
         });
         monitor.println('');
-        monitor.println('1Save 2Delete 0Back');
+        monitor.println('[1] Save [2] Delete [0] Back');
         interfaceAction = handleBotSaveDelete(fn-5);
     }
 }

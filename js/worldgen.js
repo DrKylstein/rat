@@ -838,7 +838,7 @@ function makeWorld() {
             speed:400.0,
             vspeed:0.0,
             spawn: startPos,
-            name:'R.A.T.',
+            name:'RAT',
             nick:nick
         });
         colliders.push({
