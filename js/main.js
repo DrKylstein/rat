@@ -211,14 +211,6 @@ var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 Random.shuffle(programs);
 Random.shuffle(buildings);
 
-buildings.forEach(function(building){
-    building.rooms.forEach(function(room){
-        var light = makeCeilingLight();
-        light.position.y = 20;
-        room.add(light);
-    });
-});
-
 var startRoom;
 
 buildings.forEach(function(building, i) {
@@ -229,7 +221,7 @@ buildings.forEach(function(building, i) {
     room.add(mainframe);
     obstacles.push(new THREE.Box3().setFromObject(mainframe));
     
-    if(building.isStart) {
+    if(i == 0) {
         terminals.push({
             id:mainframe.id,
             body:mainframe, 

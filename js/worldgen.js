@@ -320,6 +320,9 @@ function makeWorld(ENV_COLORS, BUILDING_COLORS) {
                 root.add(leftWall);
                 obstacleNodes.push(leftWall);
             }
+            var light = makeCeilingLight();
+            light.position.y = height;
+            room.add(light);
         });
         
         rooms.push(meta);
