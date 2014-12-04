@@ -8,14 +8,14 @@ function makeWorld() {
     var obstacleNodes = [];
     var obstacles = [];
     var pathers = [];
-    var stunnable = [];
+    var damageable = [];
     var rogueBots = [];
     var bots = [];
     var botMarkers = [];
     var terminals = [];
     var potentialTerminals = [];
     var map;
-    
+    var shooters = [];
     
     var gridTex = new THREE.ImageUtils.loadTexture("gfx/grid.png");
     gridTex.wrapS = THREE.RepeatWrapping; 
@@ -588,7 +588,6 @@ function makeWorld() {
     
     world = root;
     
-    world.updateMatrixWorld();
     
     var mapbg = makeLineBox(cityWidth, cityDepth, 0x00ff00, 0x000000);
     mapbg.position.set(cityWidth/2, cityDepth/2, 0);
@@ -597,6 +596,21 @@ function makeWorld() {
     
     var mapDetail = new THREE.Object3D();
     
+    world.updateMatrixWorld();
+    obstacles = obstacleNodes.map(function(wall){
+        //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
+        //bbox.update();
+        //world.add(bbox);
+        var box = new THREE.Box3();
+        box.setFromObject(wall);
+        return box;
+    });
+    var indoors = buildings.map(function(building){
+        var pos = new THREE.Vector3(0,0,0);
+        building.obj.localToWorld(pos);
+        return new THREE.Box3().setFromCenterAndSize(pos, building.size);
+    });
+
     buildings.forEach(function(building){
         var box = makeLineBox(150,150,0x00ff00, 0x00ff00);
         //box.children[0].position.y = 0;
@@ -608,21 +622,35 @@ function makeWorld() {
     map.add(mapDetail);
     map.scale.set(1/Math.max(cityWidth, cityDepth), 1/Math.max(cityWidth, cityDepth), 1);
     
-    obstacles = obstacleNodes.map(function(wall){
-        //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
-        //bbox.update();
-        //world.add(bbox);
-        var box = new THREE.Box3();
-        box.setFromObject(wall);
-        return box;
-    });
-
-    var indoors = buildings.map(function(building){
-        var pos = new THREE.Vector3(0,0,0);
-        building.obj.localToWorld(pos);
-        return new THREE.Box3().setFromCenterAndSize(pos, building.size);
-    });
-
+    
+    function spawnTurret() {
+        var root = new THREE.Object3D();
+        var bottom = 0;
+        
+        var base = makeBox(5,10,5, 0xff0000, 0x888888);
+        pointify(base.children[0].geometry, 10, 0.5, 0.5);
+        root.add(base);
+        bottom += 10;
+        
+        var head = makeBox(5,3,5, 0xff0000, 0x880000);
+        head.position.y = bottom;
+        root.add(head);
+        bottom += 3;
+        
+        var gun = makeBox(1,1,3, 0xff0000, 0x444444);
+        head.add(gun);
+        gun.position.z = -5/2 - 3/2;
+        gun.position.y = 1;
+        
+        
+        shooters.push({id:head.id, gun:head, cooldown:0});
+        damageable.push({id:head.id, damage:0, body:head});
+        
+        return root;
+    }
+    
+    
+    
     
     var hackerKey = {
         name:'hacker key',
@@ -736,6 +764,8 @@ function makeWorld() {
             building = buildings[i%buildings.length]
         }
         var room = Random.choose(building.leafRooms);
+        building.rooms.splice(building.rooms.indexOf(room),1);
+        building.leafRooms.splice(building.leafRooms.indexOf(room),1);
         var mainframe = makeMainframe();
         var back = room.userData.size.z/2 - 5;
         mainframe.position.z -= back;
@@ -748,6 +778,18 @@ function makeWorld() {
             }));
             building.rooms.splice(building.rooms.indexOf(startRoom), 1);
             building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
+        } else {
+            room = Random.choose(building.rooms);
+            if(i < 3) {
+                var left = spawnTurret();
+                left.position.x = -room.userData.size.x/2 + 5/2;
+                room.add(left);
+                obstacles.push(new THREE.Box3().setFromObject(left));
+            }
+            var right = spawnTurret();
+            right.position.x = +room.userData.size.x/2 - 5/2;
+            room.add(right);
+            obstacles.push(new THREE.Box3().setFromObject(right));
         }
         
         terminals.push({
@@ -761,8 +803,6 @@ function makeWorld() {
         });
         
         
-        building.rooms.splice(building.rooms.indexOf(room),1);
-        building.leafRooms.splice(building.leafRooms.indexOf(room),1);
     });
 
     buildings.forEach(function(building){
@@ -841,14 +881,14 @@ function makeWorld() {
     var sx = Random.integer(0,xBlocks-1);
     var sz = Random.integer(0,zBlocks-1);
 
-    spawnGuard(intersections[sx][sz],
+    /*spawnGuard(intersections[sx][sz],
         [
             intersections[sx][sz],
             intersections[sx+1][sz],
             intersections[sx+1][sz+1],
             intersections[sx][sz+1]
         ]
-    );
+    );*/
 
     var startPos = new THREE.Vector3(0,0,0);
     startRoom.localToWorld(startPos);
@@ -870,7 +910,7 @@ function makeWorld() {
         })();
         
         var id = shape.body.id;
-        var nick = Random.choose(['Rizzo', 'Chuckie', 'Jerry']);
+        var nick = 'Jerry';
         shape.body.position.copy(startPos);
         world.add(shape.body);
         terminals.push({
@@ -900,7 +940,8 @@ function makeWorld() {
             g:9.8,
             dy:0
         });
-        
+        damageable.push({id:id, body:shape.body, damage:0});
+
         botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
         
     })();
@@ -947,7 +988,7 @@ function makeWorld() {
         shape.body.position.y = 10;
         shape.body.position.add(intersections[sx][sz]);
         world.add(shape.body);
-        var nick = Random.choose(['Amelia', 'Kiki', 'Anneka', 'Glenda']);
+        var nick = 'Amelia';
         
         colliders.push({
             id:id, 
@@ -992,7 +1033,7 @@ function makeWorld() {
                 new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz])
             ]
         });
-        stunnable.push({id:id, body:shape.body});
+        damageable.push({id:id, body:shape.body, damage:0});
         potentialTerminals.push({
             id:id,
             name:nick, 
@@ -1037,7 +1078,7 @@ function makeWorld() {
         
         var id = shape.body.id;
         
-        var nick = Random.choose(['Conky', 'Igor', 'Data']);
+        var nick = 'Conky';
         
         var sx = Random.integer(0,xBlocks-1);
         var sz = Random.integer(0,zBlocks-1);
@@ -1049,7 +1090,7 @@ function makeWorld() {
             body:shape.body,
             eye:shape.eye,
             hacker:true,
-            speed:200.0,
+            speed:300.0,
             vspeed:0.0,
             spawn:intersections[sx][sz],
             resetOwner: true,
@@ -1072,7 +1113,7 @@ function makeWorld() {
             speed:20,
             device:bot
         })
-        stunnable.push({id:id, body:shape.body});
+        damageable.push({id:id, body:shape.body, damage:0});
         potentialTerminals.push({
             id:id,
             name:nick, 
@@ -1095,7 +1136,7 @@ function makeWorld() {
     botMarkers.forEach(function(marker){
         map.add(marker.blip);
     });
-    
+        
     var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth, 500, cityDepth));
 
     var mapAdjusted = new THREE.Object3D();
@@ -1117,7 +1158,7 @@ function makeWorld() {
         potentialTerminals:potentialTerminals,
         colliders:colliders,
         pathers:pathers,
-        stunnable:stunnable,
+        damageable:damageable,
         safeZone:safeZone,
         bots:bots,
         rogueBots:rogueBots,
@@ -1125,6 +1166,7 @@ function makeWorld() {
         prgMap:prgMap,
         mapDetail:mapDetail,
         mcp:mcp,
-        indoors:indoors
+        indoors:indoors,
+        shooters:shooters
     };
 }

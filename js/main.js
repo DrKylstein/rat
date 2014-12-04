@@ -190,12 +190,13 @@ function mousedown(event){
         v.multiplyScalar(400);
         beam.lookAt(new THREE.Vector3().addVectors(beam.position, v));
         projectiles.push({
+            id:bot.id,
             start:new THREE.Vector3().copy(bot.body.position),
             body:beam,
             velocity:v
         });
         scene.add(beam);
-        cooldown = 0.5;
+        cooldown = 0.25;
     }
 }
 
@@ -294,9 +295,9 @@ var SMALL_LABEL = 0.025;
 var BAR_H = 0.03;
 var BAR_Y = VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
 
-var damageBar = new Bar(BAR_H, 0.01, 0.01, 10);
+var damageBar = new Bar(BAR_H, 0.01, 0.005, 10);
 bottomHud.add(damageBar.display);
-damageBar.display.position.set(0.5 - 0.10, BAR_Y, 1);
+damageBar.display.position.set(0.5 - 0.10, BAR_Y-BAR_H/2, 1);
 damageBar.display.rotation.y = Math.PI;
 var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
     new THREE.Vector3(-0.5, 0.5, 0.0),
@@ -310,9 +311,9 @@ bottomHud.add(damageSymbol);
 damageBar.set(0);
 
 
-var radBar = new Bar(BAR_H, 0.01, 0.01, 10);
+var radBar = new Bar(BAR_H, 0.01, 0.005, 10);
 bottomHud.add(radBar.display);
-radBar.display.position.set(-0.5 + 0.10, BAR_Y, 1);
+radBar.display.position.set(-0.5 + 0.10, BAR_Y-BAR_H/2, 1);
 var radSymbol = new THREE.Object3D();
 for(var i= 0; i < 3; i++) {
     var foil = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
@@ -426,6 +427,7 @@ function setBot(fn) {
     controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
     updateRampaks();
     botIndicator.position.x = fn*0.25 - 0.5 + 0.25/2;
+    crosshair.visible = bot.canShoot;
 }
 setBot(0);
 
@@ -548,11 +550,13 @@ function handleBotSaveDelete(index) {
 
 
 var v = new THREE.Vector3(0,0,0);
+var v2 = new THREE.Vector3(0,0,0);
 var m = new THREE.Matrix4();
 var raycaster = new THREE.Raycaster();
 var prevTime = performance.now();
 var UP = new THREE.Vector3(0,1,0);
 var DOWN = new THREE.Vector3(0,-1,0);
+var ZERO = new THREE.Vector3(0,0,0);
 var interfaceAction = null;
 var botbox = new THREE.Box3();
 
@@ -716,26 +720,41 @@ function update(time) {
             pather.body.position.add(v);
         });
         
-        
-        stunned.forEach(function(stunned){
-            stunned.time -= delta;
-        });
-        stunned.filter(function(item){return item.time <= 0;}).forEach(
-        function(item, i){
-            stunned.splice(i, 1);
-            var foundMover = findById(pausedPathers, item.id);
-            if(foundMover) {
-                pausedPathers.splice(foundMover.index, 1);
-                world.pathers.push(foundMover.obj);
-            }
+        var targetPos = bot.body.position.clone();
+        targetPos.y += 5;
+        world.shooters.forEach(function(shooter){
+            v.copy(targetPos);
+            shooter.gun.parent.worldToLocal(v);
+            m.lookAt(shooter.gun.position, v, UP);
+            shooter.gun.rotation.setFromRotationMatrix(m);
             
-            var foundDevice = findById(world.terminals, item.id);
-            if(foundDevice) {
-                world.terminals.splice(foundDevice.index, 1);
-                world.potentialTerminals.push(foundDevice.obj);
+            if(shooter.cooldown <= 0 && v.length() < 50) {
+                var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
+                var pos = new THREE.Vector3(0,-1,-3);
+                beam.position.copy(shooter.gun.localToWorld(pos));
+                beam.lookAt(targetPos);
+                
+                var start = shooter.gun.position.clone();
+                shooter.gun.parent.localToWorld(start);
+                
+                var velocity = start.clone();
+                velocity.sub(targetPos);
+                velocity.negate();
+                velocity.normalize();
+                velocity.multiplyScalar(100);
+                
+                projectiles.push({
+                    id:shooter.id,
+                    start:start,
+                    body:beam,
+                    velocity:velocity
+                });
+                scene.add(beam);
+                shooter.cooldown = 1.0;
+            } else {
+               shooter.cooldown -= delta;
             }
         });
-        
         
         var deadProjectiles = [];
         projectiles.forEach(function(proj){
@@ -745,30 +764,31 @@ function update(time) {
             v.normalize();
             raycaster.set(proj.body.position, v);
             
-            world.stunnable.filter(
+            world.damageable.filter(
                 function(item){
-                    return raycaster.intersectObject(item.body, true).length > 0;
+                    return proj.id != item.id && raycaster.intersectObject(item.body, true).length > 0;
                 }
-            ).forEach(
-                function(item){
-                    var found = findById(stunned, item.id);
-                    if(found){
-                        found.obj.time += 10;
-                    } else {
-                        stunned.push({id:item.id, time:10});
-                        var found = findById(world.pathers, item.id);
-                        if(found) {
-                            world.pathers.splice(found.index, 1);
-                            pausedPathers.push(found.obj);
-                        }
-                        var found = findById(world.potentialTerminals, item.id);
-                        if(found) {
-                            world.potentialTerminals.splice(found.index, 1);
-                            world.terminals.push(found.obj);
-                        }
+            ).forEach(function(item){
+                item.damage += 1;
+                
+                if(item.id == bot.id) noiseLevel = 1.0;
+                
+                var found = findById(stunned, item.id);
+                if(found){
+                    found.obj.time += 10;
+                } else if(item.damage > 5) {
+                    var found = findById(world.pathers, item.id);
+                    if(found) {
+                        world.pathers.splice(found.index, 1);
+                        pausedPathers.push(found.obj);
+                    }
+                    var found = findById(world.potentialTerminals, item.id);
+                    if(found) {
+                        world.potentialTerminals.splice(found.index, 1);
+                        world.terminals.push(found.obj);
                     }
                 }
-            );
+            });
             
             scene.remove(proj.body);
             if(proj.body.position.distanceTo(proj.start) > 300 || 
@@ -834,65 +854,100 @@ function update(time) {
             });
             obj.body.position.y += obj.dy*delta;
         });
+                
+        world.damageable.filter(function(a){return a.damage > 10 || a.body.position.y < -10;}).forEach(function(item) {
+            var foundBot = findById(world.bots, item.id);
+            if(foundBot) {
+                var deadBot = foundBot.obj;
+                deadBot.body.position.copy(deadBot.spawn);
+                item.damage = 0;
+                var device = findById(world.terminals, deadBot.id);
+                device.obj.contents = [];
+
+                if(deadBot.resetOwner) {
+                    device.obj.locked = true;
+                    world.bots.splice(foundBot.index, 1);
+                    world.rogueBots.push(deadBot);
+                    world.terminals.splice(device.index, 1);
+                    world.potentialTerminals.push(device.obj);
+                    var pather = findById(pausedPathers, deadBot.id);
+                    if(pather) {
+                        pausedPathers.splice(pather.index, 1);
+                        world.pathers.push(pather.obj);
+                        pather.obj.index = 0;
+                    }
+                }
+                if(bot.id == deadBot.id) {
+                    noiseLevel = 2.0;
+                    setBot(0);
+                    updateBotLabels();
+                    updateRampaks();
+                }
+
+            } else {
+                var found = findById(world.shooters, item.id);
+                if(found) {
+                    world.shooters.splice(found.index, 1);
+                }
+                var found = findById(world.pathers, item.id);
+                if(found) {
+                    world.pathers.splice(found.index, 1);
+                }
+                var found = findById(world.terminals, item.id);
+                if(found) {
+                    world.terminals.splice(found.index, 1);
+                }
+                var found = findById(world.damageable, item.id);
+                if(found) {
+                    world.damageable.splice(found.index, 1);
+                }
+                item.body.visible = false;
+            }
+        });
         
+        world.damageable.forEach(function(item){
+            if(item.damage > 0) {
+                item.damage = Math.max(0, item.damage - 0.2*delta);
+                if(item.damage < 4) {
+                    if(!findById(world.bots, item.id)) {
+                        var found = findById(pausedPathers, item.id);
+                        if(found) {
+                            pausedPathers.splice(found.index, 1);
+                            world.pathers.push(found.obj);
+                        }
+                        var found = findById(world.terminals, item.id);
+                        if(found) {
+                            world.terminals.splice(found.index, 1);
+                            world.potentialTerminals.push(found.obj);
+                        }
+                    }
+                }
+            }
+        });
+
+        
+        //shooting cooldown of current bot
         if(cooldown > 0)
             cooldown -= delta;
         
         
         var radiation = world.safeZone.distanceToPoint(bot.body.position)/30;
         radBar.set(radiation);
+        var botDamage = findById(world.damageable, bot.id);
         if(radiation > 1) {
-            if(!('damage' in bot)) {
-                bot.damage = 0;
-            }
-            var b = Math.floor(bot.damage);
-            bot.damage += radiation*0.3*delta;
-            if(b < Math.floor(bot.damage))
+            var b = Math.floor(botDamage.obj.damage);
+            botDamage.obj.damage += radiation*0.3*delta;
+            if(b < Math.floor(botDamage.obj.damage))
                 noiseLevel = 1.0;
-        } else {
-            if('damage' in bot) {
-                if(bot.damage > 0) {
-                    bot.damage -= 0.2*delta;
-                }
-                if(bot.damage < 0) {
-                    bot.damage = 0;
-                }
-            }
         }
         
         
-        if(bot.damage) {
-            damageBar.set(bot.damage);
-        } else {
-            damageBar.set(0);
-        }
+        damageBar.set(botDamage.obj.damage);
         
-        
-        if((bot.damage && bot.damage > 10) || bot.body.position.y < -5) {
-            bot.body.position.copy(bot.spawn);
-            bot.damage = 0;
-            var device = findById(world.terminals, bot.id);
-            device.obj.contents.splice(0,device.obj.contents.length);
-            if(bot.resetOwner) {
-                device.obj.locked = true;
-                var foundBot = findById(world.bots, bot.id);
-                world.bots.splice(foundBot.index, 1);
-                world.rogueBots.push(foundBot.obj);
-                world.terminals.splice(device.index, 1);
-                world.potentialTerminals.push(device.obj);
-                var pather = findById(pausedPathers, bot.id);
-                if(pather) {
-                    pausedPathers.splice(mover.index, 1);
-                    world.pathers.push(mover.obj);
-                }
-                setBot(0);
-                updateBotLabels();
-            }
-            updateRampaks();
-        }
         
         controls.update(delta);
     }
+    
     
     blinkTime += delta;
     world.botMarkers.forEach(function(marker){
@@ -902,22 +957,27 @@ function update(time) {
         marker.blip.visible = (
             (blinkTime > 0.25 && marker.id == bot.id) || 
             (marker.id != bot.id && client.contents.indexOf(world.prgRadar) != -1)
-        )/* && world.indoors.every(function(box){
+        ) && world.indoors.every(function(box){
             return !box.containsPoint(marker.body.position);
-        })*/;
-            
-        if(blinkTime > 0.5)
-            blinkTime = 0;
+        });
     });
+    if(blinkTime > 0.5)
+        blinkTime = 0;
+    
+    
     world.mapDetail.visible = client.contents.indexOf(world.prgMap) != -1;
     world.map.visible = world.indoors.every(function(box){
         return !box.containsPoint(bot.body.position);
     })
+    
+    
     compass.rotation.y = bot.body.rotation.y;
-    //compass.rotation.x = bot.eye.rotation.x;
+    
+    
     if(noiseLevel > 0) {
         noiseLevel = Math.max(0,noiseLevel - 1.0*delta);
     }
+
     
     vecTweens.forEach(function(tween){
         tween.now.lerp(tween.future, tween.alpha);
@@ -927,6 +987,7 @@ function update(time) {
         vecTweens.splice(findById(vecTweens, tween.id).index, 1);
         tween.now.copy(tween.future);
     });
+    
     
     render(time);
     prevTime = time;
