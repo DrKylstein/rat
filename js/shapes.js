@@ -2,21 +2,25 @@ function makeShaderMat(color, backColor) {
     return new THREE.ShaderMaterial({
         vertexShader: document.getElementById( 'vertexShader' ).textContent,
         fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-        uniforms: {
-            color:{
-                type:'c', 
-                value:new THREE.Color(color)
-            },
-            backColor:{
-                type:'c', 
-                value:new THREE.Color(backColor)
-            },
-            fogColor:{type:'c'},
-            fogNear:{type:'f'},
-            fogFar:{type:'f'},
-        },
+        uniforms: THREE.UniformsUtils.merge([
+            THREE.UniformsLib['lights'],
+            {
+                color:{
+                    type:'c', 
+                    value:new THREE.Color(color)
+                },
+                backColor:{
+                    type:'c', 
+                    value:new THREE.Color(backColor)
+                },
+                fogColor:{type:'c'},
+                fogNear:{type:'f'},
+                fogFar:{type:'f'},
+            }
+        ]),
         useFog:true,
-        fog:true
+        fog:true,
+        lights:true
     });
 }
 function makeBox(w, h, d, color, backColor) {

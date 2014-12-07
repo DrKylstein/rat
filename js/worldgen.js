@@ -44,15 +44,23 @@ function makeWorld() {
     var blockDepth = lotSize*zLots + alleySize;
     var cityWidth = xBlocks*blockWidth + roadSize;
     var cityDepth = zBlocks*blockDepth + alleySize;
+    var eastCoast = Random.choose([0,1000]);
+    var westCoast = Random.choose([0,1000]);
+    var northCoast = Random.choose([0,1000]);
+    var southCoast = Random.choose([0,1000]);
+    var landWidth = cityWidth+eastCoast+westCoast;
+    var landDepth = cityDepth+northCoast+southCoast;
+        
+    var landCenter = new THREE.Vector2(landWidth/2 - eastCoast, landDepth/2 - northCoast);
         
     var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
     ocean.position.set(cityWidth/2, -10, cityDepth/2);
     ocean.name = 'ocean';
     root.add(ocean);
     
-    var pavement = makeBox(cityWidth, 20, cityDepth, null, gridTex);
-    scaleUv(pavement.children[0].geometry, blockWidth/2, blockDepth/2);
-    pavement.position.set(cityWidth/2, -20, cityDepth/2);
+    var pavement = makeBox(landWidth, 20, landDepth, null, gridTex);
+    scaleUv(pavement.children[0].geometry, landWidth/8, landDepth/8);
+    pavement.position.set(landCenter.x, -20, landCenter.y);
     root.add(pavement);
     obstacleNodes.push(pavement);
     
@@ -137,7 +145,7 @@ function makeWorld() {
                     root.add(building);
                 } else {
                     var building = makeBuilding(lotSize-75, 
-                        Math.max(Random.normal(60, 300), 22), style, 0x000000);
+                        Math.max(Random.normal(60, 300), 30), style, 0x000000);
                     building.position.y = 3;
                     building.position.z = z*lotSize + lotSize/2;
                     building.position.x = x*lotSize + lotSize/2;
@@ -348,7 +356,7 @@ function makeWorld() {
         east.rotation.y = Math.PI/2;
         west.rotation.y = Math.PI/2;
         
-        var cieling = makeBox(diameter, 0, diameter, color, backColor);
+        var cieling = makeBox(diameter, 0, diameter, 0xffffff, 0xaaaaaa);
         cieling.position.y = 20 - 0.1;
         root.add(cieling);
                 
@@ -589,7 +597,11 @@ function makeWorld() {
     world = root;
     
     
-    var mapbg = makeLineBox(cityWidth, cityDepth, 0x00ff00, 0x000000);
+    var land = makeLineBox(landWidth, landDepth, 0x00ff00, 0x000000);
+    land.position.set(landCenter.x, landCenter.y, 0);
+    map.add(land);
+    
+    var mapbg = makeLineBox(cityWidth+2000, cityDepth+2000, 0x00ff00, 0x000000);
     mapbg.position.set(cityWidth/2, cityDepth/2, 0);
     
     map.add(mapbg);
@@ -620,7 +632,7 @@ function makeWorld() {
         mapDetail.add(box);
     });
     map.add(mapDetail);
-    map.scale.set(1/Math.max(cityWidth, cityDepth), 1/Math.max(cityWidth, cityDepth), 1);
+    map.scale.set(1/Math.max(cityWidth+2000, cityDepth+2000), 1/Math.max(cityWidth+2000, cityDepth+2000), 1);
     
     
     function spawnTurret() {
@@ -1137,12 +1149,12 @@ function makeWorld() {
         map.add(marker.blip);
     });
         
-    var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth, 500, cityDepth));
+    var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth+200, 500, cityDepth+200));
 
     var mapAdjusted = new THREE.Object3D();
     mapAdjusted.add(map);
-    map.position.y = 1.0;
-    map.position.x = 0;
+    map.position.y = 0.70;
+    map.position.x = 0.25;
     
     return {
         doors:doors, 

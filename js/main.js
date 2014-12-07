@@ -16,9 +16,9 @@ function findById(arr, id) {
 }
 
 var FAR = 800;
-
+var MAX_LIGHTS = 8;
 var camera, hudCamera, overlayCamera;
-var renderer = new THREE.WebGLRenderer({antialias:true}); 
+var renderer = new THREE.WebGLRenderer({antialias:true, maxLights:MAX_LIGHTS}); 
 var scene = new THREE.Scene(); 
 var hudScene = new THREE.Scene();
 var bottomHud = new THREE.Object3D();
@@ -50,6 +50,7 @@ document.body.appendChild(canvas);
     overlayCamera.position.z = 10;
     renderer.setSize(width, height);
 })();
+
 window.onresize = function onWindowResize() {
     var width = window.innerWidth;
     var height = window.innerHeight;
@@ -101,8 +102,8 @@ renderer.setClearColor(ENV_COLORS[1],1);
     overlayScene.add(mesh);
 })();
 
-var stunned = [];
 var projectiles = [];
+var lights = [];
 var pausedPathers = [];
 var vecTweens = [];
 var bot = null;
@@ -176,10 +177,9 @@ function keydown(event){
 }
 
 var cooldown = 0;
-
 function mousedown(event){
     if(bot.canShoot && cooldown <= 0) {
-        var beam = makeBox(1, 1, 10, 0xffffff, 0xffffff);
+        var beam = makeBox(0.5, 0.5, 5, 0xff00ff, 0xff00ff);
         var pos = new THREE.Vector3(0,-2,0);
         beam.position.copy(bot.eye.localToWorld(pos));
         var v = new THREE.Vector3(0.0,0.0,1.0);
@@ -187,13 +187,24 @@ function mousedown(event){
         v.multiplyScalar(bot.radius+5);
         beam.position.add(v);
         controls.getLookVector(v);
-        v.multiplyScalar(400);
+        v.multiplyScalar(150);
         beam.lookAt(new THREE.Vector3().addVectors(beam.position, v));
+        
+        var light = getLight();
+        light.body.color.setHex(0xff00ff);
+        light.body.intensity = 0.5;
+        light.body.distance = 10;
+        light.owner = beam.id;
+        light.body.position.copy(beam.position);
+        light.time = performance.now();
+        
         projectiles.push({
-            id:bot.id,
+            owner:bot.id,
+            id:beam.id,
             start:new THREE.Vector3().copy(bot.body.position),
             body:beam,
-            velocity:v
+            velocity:v,
+            light:light
         });
         scene.add(beam);
         cooldown = 0.25;
@@ -549,6 +560,25 @@ function handleBotSaveDelete(index) {
 }
 
 
+for(var i = 0; i < MAX_LIGHTS; i++) {
+    lights.push({owner:-1, time:0, body:new THREE.PointLight(0xffffff, 0, 10)});
+    scene.add(lights[i].body);
+}
+
+function getLight() {
+    var oldest = lights[0];
+    for(var i = 0; i < lights.length; i++) {
+        if(lights[i].owner = -1) {
+            return lights[i];
+        }
+        if(lights[i].time < oldest.time) {
+            oldest = lights[i];
+        }
+    }
+    return oldest;
+}
+
+
 var v = new THREE.Vector3(0,0,0);
 var v2 = new THREE.Vector3(0,0,0);
 var m = new THREE.Matrix4();
@@ -620,10 +650,6 @@ function update(time) {
                                 world.rogueBots.splice(found.index, 1);
                                 world.bots.push(found.obj);
                                 updateBotLabels();
-                                var foundStunned = findById(stunned, device.id);
-                                if(foundStunned) {
-                                    stunned.splice(foundStunned.index, 1);
-                                }
                             }
                         }
                         interfaceAction = handleFiles;
@@ -741,13 +767,23 @@ function update(time) {
                 velocity.sub(targetPos);
                 velocity.negate();
                 velocity.normalize();
-                velocity.multiplyScalar(100);
+                velocity.multiplyScalar(150);
+                
+                var light = getLight();
+                light.body.color.setHex(0xffff00);
+                light.body.intensity = 0.5;
+                light.body.distance = 10;
+                light.owner = beam.id;
+                light.body.position.copy(beam.position);
+                light.time = performance.now();
                 
                 projectiles.push({
-                    id:shooter.id,
+                    owner:shooter.id,
+                    id:beam.id,
                     start:start,
                     body:beam,
-                    velocity:velocity
+                    velocity:velocity,
+                    light:light
                 });
                 scene.add(beam);
                 shooter.cooldown = 1.0;
@@ -766,17 +802,14 @@ function update(time) {
             
             world.damageable.filter(
                 function(item){
-                    return proj.id != item.id && raycaster.intersectObject(item.body, true).length > 0;
+                    return proj.owner != item.id && raycaster.intersectObject(item.body, true).length > 0;
                 }
             ).forEach(function(item){
                 item.damage += 1;
                 
                 if(item.id == bot.id) noiseLevel = 1.0;
                 
-                var found = findById(stunned, item.id);
-                if(found){
-                    found.obj.time += 10;
-                } else if(item.damage > 5) {
+                if(item.damage > 5) {
                     var found = findById(world.pathers, item.id);
                     if(found) {
                         world.pathers.splice(found.index, 1);
@@ -799,10 +832,17 @@ function update(time) {
             v.copy(proj.velocity);
             v.multiplyScalar(delta);
             proj.body.position.add(v);
+            if(proj.id == proj.light.owner) {
+                proj.light.body.position.copy(proj.body.position);
+            }
         });
         deadProjectiles.forEach(function(proj){
             projectiles.splice(projectiles.indexOf(proj), 1);
             scene.remove(proj.body);
+            if(proj.id == proj.light.owner) {
+                proj.light.body.intensity = 0;
+                proj.light.owner = -1;
+            }
         });
         
         

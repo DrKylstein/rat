@@ -2,9 +2,7 @@ issues:
 sometimes captured robot has inverted camera angle
 
 features:
-map
 more decor
-distinctive start building
-match interesting items to interesting buildings?
-defense turrets
-forcefields?
+wilderness
+non-violent capture
+teleporters
