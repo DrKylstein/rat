@@ -17,7 +17,7 @@ function makeWorld() {
     var map;
     var shooters = [];
     
-    var gridTex = new THREE.ImageUtils.loadTexture("gfx/grid.png");
+    var gridTex = new THREE.ImageUtils.loadTexture("rat_grid.png");
     gridTex.wrapS = THREE.RepeatWrapping; 
     gridTex.wrapT = THREE.RepeatWrapping;
     gridTex.anisotropy = 8;
