@@ -22,7 +22,103 @@ function makeWorld() {
     gridTex.wrapT = THREE.RepeatWrapping;
     gridTex.anisotropy = 8;
     
-        
+    var NAMES = [
+    'Rodriguez',
+    'Garcia',
+    'Smith',
+    'Johnson',
+    'Williams',
+    'Brown',
+    'Jones',
+    'Wang',
+    'Li',
+    'Zhang',
+    'Kim',
+    'Pak',
+    'Choi',
+    'Schmidt',
+    'Fischer',
+    'Hoffman',
+    'Miller',
+    'Nguyen',
+    'Bell',
+    'Cox',
+    'Ortiz',
+    'Dubois',
+    'Fournier',
+    'Jensen',
+    'Sorenson',
+    'Karlsson',
+    'Lindberg',
+    'Smirnov',
+    'Kuznetsov',
+    'Santos',
+    'Nadeem',
+    'Bhat',
+    'Farash',
+    'Kapoor',
+    'Soni',
+    'Mathur'
+    ];
+    var BIG_ADJECTIVES = [
+    'Global',
+    'International',
+    'Universal',
+    'Solid',
+    'Metro',
+    'Astro',
+    'New Age',
+    'Epoch',
+    'Premier',
+    'Acme',
+    'Apex',
+    'World',
+    'Superlative',
+    'US',
+    'National',
+    'Apogee',
+    'Top',
+    'Acclaim',
+    '3D'
+    ];
+    var BIG_BUSINESSES = [
+    ' Dynamics',
+    ' Electronics',
+    ' Research',
+    ' Technology',
+    ' Electromatics',
+    ' Robotics',
+    ' Cybernetics',
+    ' Image',
+    ' Holographix',
+    ' Industries',
+    ' Semiconductor',
+    ' Photonics',
+    ' Solutions',
+    ' Studios',
+    ' Data',
+    ' Informatics',
+    ' Automation'
+    ];
+    var CORPORATIONS = [
+    ' Ltd.',
+    ' Inc.',
+    ' Co.',
+    ' LLC',
+    ' Corp.'
+    ];
+    var SMALL_BUSINESSES = [
+    ' Dentistry',
+    ' Engineering',
+    ' Accounting',
+    ' Consultants',
+    ' Services',
+    ' Salon',
+    ' Groceries',
+    '\'s Diner',
+    '\'s Place',
+    ' Travel'
+    ];
             
     var world; 
         
@@ -292,20 +388,35 @@ function makeWorld() {
         portalDoors.push({door:door, inside:layout, size:new THREE.Vector2(diameter-2, diameter-2)});
         layout.visible = false;
         
+        var name;
         var top; 
         if(topHeight > 100) {
+            name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
+            name += Random.choose(BIG_BUSINESSES);
+            name += Random.choose(CORPORATIONS);
+        
+
             if(Math.random() > 0.5) {
                     top = makeTower(diameter, topHeight, diameter, color, backColor);
             } else {
                     top = makeModernBuilding(diameter, topHeight, diameter, color, backColor);
             }
         } else {
+            name = Random.choose(NAMES);
+            name += Random.choose(SMALL_BUSINESSES);
             top = makeSimpleBuilding(diameter, topHeight, diameter, color, backColor);
         }
+        
+        var sign = new THREE.Mesh(new THREE.TextGeometry(name, {size:3, height:1}), makeShaderMat(color, color));
+        sign.position.z = diameter/2;
+        sign.position.x = 2 - diameter/2;
+        sign.position.y = 15;
+        root.add(sign);
+        
         top.position.y = startHeight;
         obstacleNodes.push(top);
         root.add(top);
-        
+                
         return root;
     }
     
