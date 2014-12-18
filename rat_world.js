@@ -79,7 +79,10 @@ function makeWorld() {
     'Apogee',
     'Top',
     'Acclaim',
-    '3D'
+    '3D',
+    'Almagamated',
+    'Allied',
+    'Standard'
     ];
     var BIG_BUSINESSES = [
     ' Dynamics',
@@ -98,14 +101,19 @@ function makeWorld() {
     ' Studios',
     ' Data',
     ' Informatics',
-    ' Automation'
+    ' Automation',
+    ' Defense',
+    ' Simulation',
+    ' Nuclear',
+    ' Energy'
     ];
     var CORPORATIONS = [
     ' Ltd.',
     ' Inc.',
     ' Co.',
     ' LLC',
-    ' Corp.'
+    ' Corp.',
+    ' Associates'
     ];
     var SMALL_BUSINESSES = [
     ' Dentistry',
@@ -117,7 +125,9 @@ function makeWorld() {
     ' Groceries',
     '\'s Diner',
     '\'s Place',
-    ' Travel'
+    ' Travel',
+    '\'s Burgers',
+    '\'s Pizza'
     ];
             
     var world; 
