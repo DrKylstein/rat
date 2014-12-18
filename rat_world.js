@@ -170,6 +170,49 @@ function makeWorld() {
     root.add(pavement);
     obstacleNodes.push(pavement);
     
+    var PIER_SIZE = [100,30];
+    
+    if(!northCoast) {
+        var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
+        pier.position.set(landCenter.x,-2,landCenter.y - landDepth/2 - PIER_SIZE[0]/2);
+        root.add(pier);
+        obstacleNodes.push(pier);w
+        
+        var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
+        pier.position.set(landCenter.x,landCenter.y - landDepth/2 - PIER_SIZE[0]/2,0);
+        map.add(pier);
+    }
+    if(!southCoast) {
+        var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
+        pier.position.set(landCenter.x,-2,landCenter.y + landDepth/2 + PIER_SIZE[0]/2);
+        root.add(pier);
+        obstacleNodes.push(pier);
+        
+        var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
+        pier.position.set(landCenter.x,landCenter.y + landDepth/2 + PIER_SIZE[0]/2,0);
+        map.add(pier);
+    }
+    if(!eastCoast) {
+        var pier = makeBox(PIER_SIZE[0],2,PIER_SIZE[1], ENV_COLORS[0], ENV_COLORS[1]);
+        pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,-2,landCenter.y);
+        root.add(pier);
+        obstacleNodes.push(pier);
+        
+        var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
+        pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,landCenter.y,0);
+        map.add(pier);
+    }
+    if(!westCoast) {
+        var pier = makeBox(PIER_SIZE[0],2,PIER_SIZE[1], ENV_COLORS[0], ENV_COLORS[1]);
+        pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,-2,landCenter.y);
+        root.add(pier);
+        obstacleNodes.push(pier);
+        
+        var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
+        pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,landCenter.y);
+        map.add(pier);
+    }
+    
     for(var z = 0; z < zBlocks; z++) {
         for(var x = 0; x < xBlocks; x++) {
             var height = 100;
@@ -745,7 +788,7 @@ function makeWorld() {
     });
 
     buildings.forEach(function(building){
-        var box = makeLineBox(150,150,0x00ff00, 0x00ff00);
+        var box = makeLineBox(150,150,SCREEN_COLORS[0]);
         //box.children[0].position.y = 0;
         building.obj.localToWorld(box.position);
         box.position.y = box.position.z;
