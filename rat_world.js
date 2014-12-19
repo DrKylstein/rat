@@ -176,7 +176,7 @@ function makeWorld() {
         var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
         pier.position.set(landCenter.x,-2,landCenter.y - landDepth/2 - PIER_SIZE[0]/2);
         root.add(pier);
-        obstacleNodes.push(pier);w
+        obstacleNodes.push(pier);
         
         var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
         pier.position.set(landCenter.x,landCenter.y - landDepth/2 - PIER_SIZE[0]/2,0);
@@ -216,7 +216,7 @@ function makeWorld() {
     for(var z = 0; z < zBlocks; z++) {
         for(var x = 0; x < xBlocks; x++) {
             var height = 100;
-            var block = makeBlock(xLots,zLots,lotSize,height,x,z);
+            var block = makeBlock(xLots,zLots,lotSize,height);
             block.position.z = z*blockDepth + alleySize;
             block.position.x = x*blockWidth + roadSize;
             root.add(block);
@@ -233,7 +233,7 @@ function makeWorld() {
         }
     }
     
-    function makeBlock(width, depth, lotSize, height, bx,bz) {
+    function makeBlock(width, depth, lotSize, height) {
         var root = new THREE.Object3D();
         var sz = [width*lotSize, depth*lotSize];
         var sidewalk = makeBox(sz[0], 3, sz[1], ENV_COLORS[0], ENV_COLORS[1]);
@@ -242,62 +242,32 @@ function makeWorld() {
         root.add(sidewalk);
         obstacleNodes.push(sidewalk);
         
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x - sz[0]/2 + 3/2 + 2;
-        lamp.position.z = sidewalk.position.z - sz[1]/2 + 3/2 + 2;
-        root.add(lamp);
+        var lamps = [[-1,-1], [1,1], [-1,1], [1,-1], [1,0], [-1,0]];
         
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x + sz[0]/2 - (3/2 + 2);
-        lamp.position.z = sidewalk.position.z + sz[1]/2 - (3/2 + 2);
-        root.add(lamp);
-        
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x - sz[0]/2 + (3/2 + 2);
-        lamp.position.z = sidewalk.position.z + sz[1]/2 - (3/2 + 2);
-        root.add(lamp);
-        
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x + sz[0]/2 - (3/2 + 2);
-        lamp.position.z = sidewalk.position.z - sz[1]/2 + (3/2 + 2);
-        root.add(lamp);
-        
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x + sz[0]/2 - (3/2 + 2);
-        lamp.position.z = sidewalk.position.z;
-        root.add(lamp);
-        
-        var lamp = makeLamp();
-        lamp.position.y = 3;
-        lamp.position.x = sidewalk.position.x - sz[0]/2 + (3/2 + 2);
-        lamp.position.z = sidewalk.position.z;
-        root.add(lamp);
-        
+        lamps.forEach(function(f){
+            var lamp = makeLamp();
+            lamp.position.y = 3;
+            lamp.position.x = sidewalk.position.x + (sz[0]/2 - (3/2 + 2))*f[0];
+            lamp.position.z = sidewalk.position.z + (sz[1]/2 - (3/2 + 2))*f[1];
+            root.add(lamp);
+        });
         for(var z = 0; z < depth; z++) {
             for(var x = 0; x < width; x++) {
-                var side = [];
-                if(x == 0) side.push(-Math.PI/2);
-                if(x == width - 1) side.push(Math.PI/2);
-                if(z == 0) side.push(Math.PI);
-                if(z == depth - 1) side.push(0);
-                var style = Random.choose(BUILDING_COLORS);
                 if(Math.random() > 0.6) {
                     var building = makeRubble(lotSize-75, ENV_COLORS[0], 0x000000);
-                    building.position.y = 3;
-                    building.position.z = z*lotSize + lotSize/2;
-                    building.position.x = x*lotSize + lotSize/2;
+                    building.position.set(x*lotSize + lotSize/2, 3, z*lotSize + lotSize/2);
                     root.add(building);
                 } else {
+                    var side = [];
+                    if(x == 0) side.push(-Math.PI/2);
+                    if(x == width - 1) side.push(Math.PI/2);
+                    if(z == 0) side.push(Math.PI);
+                    if(z == depth - 1) side.push(0);
+                    var style = Random.choose(BUILDING_COLORS);
+                    
                     var building = makeBuilding(lotSize-75, 
                         Math.max(Random.normal(60, 300), 30), style, 0x000000);
-                    building.position.y = 3;
-                    building.position.z = z*lotSize + lotSize/2;
-                    building.position.x = x*lotSize + lotSize/2;
+                    building.position.set(x*lotSize + lotSize/2, 3, z*lotSize + lotSize/2);
                     building.rotation.y = Random.choose(side);
                     root.add(building);
                 }
