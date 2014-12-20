@@ -896,7 +896,7 @@ function makeWorld() {
     ];
 
     var programs = [
-        hackerKey,
+        //hackerKey,
         mcp[0],
         mcp[1],
         mcp[2],
@@ -918,11 +918,6 @@ function makeWorld() {
         var room = Random.choose(building.leafRooms);
         building.rooms.splice(building.rooms.indexOf(room),1);
         building.leafRooms.splice(building.leafRooms.indexOf(room),1);
-        var mainframe = makeMainframe();
-        var back = room.userData.size.z/2 - 5;
-        mainframe.position.z -= back;
-        room.add(mainframe);
-        obstacles.push(new THREE.Box3().setFromObject(mainframe));
         
         if(i == 0) {
             startRoom = Random.choose(building.rooms.filter(function(r2){
@@ -931,6 +926,21 @@ function makeWorld() {
             building.rooms.splice(building.rooms.indexOf(startRoom), 1);
             building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
         } else {
+            var mainframe = makeMainframe();
+            var back = room.userData.size.z/2 - 5;
+            mainframe.position.z -= back;
+            room.add(mainframe);
+            obstacles.push(new THREE.Box3().setFromObject(mainframe));
+            terminals.push({
+                id:mainframe.id,
+                body:mainframe, 
+                name:"Cyber "+(i+1), 
+                contents:[program], 
+                locked:i>0,
+                hasScreen:true,
+                readOnly: 1
+            });
+            
             room = Random.choose(building.rooms);
             if(i < 3) {
                 var left = spawnTurret(room.userData.bounds);
@@ -945,18 +955,6 @@ function makeWorld() {
             room.add(right);
             obstacles.push(new THREE.Box3().setFromObject(right));
         }
-        
-        terminals.push({
-            id:mainframe.id,
-            body:mainframe, 
-            name:"Cyber "+(i+1), 
-            contents:[program], 
-            locked:i>0,
-            hasScreen:true,
-            readOnly: 1
-        });
-        
-        
     });
 
     buildings.forEach(function(building){
@@ -1017,33 +1015,6 @@ function makeWorld() {
         return {body:root, eye:camera};
     }
 
-
-    function spawnGuard(position, patrol) {
-        var shape = makeGuard();
-        shape.body.position.copy(position);
-        pathers.push({
-            id:shape.id,
-            body:shape.body,
-            speed:20,
-            face:true,
-            index:0,
-            path:patrol
-        });
-        world.add(shape.body);
-    }
-    
-    var sx = Random.integer(0,xBlocks-1);
-    var sz = Random.integer(0,zBlocks-1);
-
-    /*spawnGuard(intersections[sx][sz],
-        [
-            intersections[sx][sz],
-            intersections[sx+1][sz],
-            intersections[sx+1][sz+1],
-            intersections[sx][sz+1]
-        ]
-    );*/
-
     var startPos = new THREE.Vector3(0,0,0);
     startRoom.localToWorld(startPos);
     (function(){
@@ -1065,27 +1036,31 @@ function makeWorld() {
         
         var id = shape.body.id;
         var nick = 'Jerry';
-        shape.body.position.copy(startPos);
+        
+        var sx = Random.integer(0,xBlocks-1);
+        var sz = Random.integer(0,zBlocks-1);
+        
+        shape.body.position.copy(intersections[sx][sz]);
         world.add(shape.body);
         terminals.push({
             id:id,
             name:nick, 
             body:shape.body, 
             contents:[],
-            locked:false,
+            locked:true,
             hasScreen:false
         });
-        bots.push({
+        rogueBots.push({
             id:id,
             body:shape.body, 
             eye:shape.eye, 
             radius:3, //used for shooting, should move
-            canShoot:true,
             speed:400.0,
             vspeed:0.0,
-            spawn: startPos,
+            spawn: intersections[sx][sz],
             name:'RAT',
-            nick:nick
+            nick:nick,
+            resetOwner:true
         });
         colliders.push({
             id:id, 
@@ -1096,6 +1071,21 @@ function makeWorld() {
         });
         damageable.push({id:id, body:shape.body, damage:0});
 
+        pathers.push({
+            id:id,
+            body:shape.body, 
+            face:true,
+            path:[
+                intersections[sx][sz],
+                intersections[sx+1][sz],
+                intersections[sx+1][sz+1],
+                intersections[sx][sz+1]
+            ],
+            index:0,
+            speed:20,
+            device:bot
+        })
+        
         botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
         
     })();
@@ -1188,14 +1178,14 @@ function makeWorld() {
             ]
         });
         damageable.push({id:id, body:shape.body, damage:0});
-        potentialTerminals.push({
+        terminals.push({
             id:id,
             name:nick, 
             body:shape.body, 
             contents:[], 
             locked:true, 
-            hasScreen:false,
-            key:eyeKey
+            hasScreen:false/*,
+            key:eyeKey*/
         });
         botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
     })();
@@ -1234,26 +1224,25 @@ function makeWorld() {
         
         var nick = 'Conky';
         
-        var sx = Random.integer(0,xBlocks-1);
-        var sz = Random.integer(0,zBlocks-1);
+        
         
         world.add(shape.body);
-        shape.body.position.copy(intersections[sx][sz]);
-        rogueBots.push({
+        shape.body.position.copy(startPos);//shape.body.position.copy(intersections[sx][sz]);
+        /*rogueBots*/bots.push({
             id:id,
             body:shape.body,
             eye:shape.eye,
             hacker:true,
             speed:300.0,
             vspeed:0.0,
-            spawn:intersections[sx][sz],
-            resetOwner: true,
+            spawn:startPos,//intersections[sx][sz],
+            //resetOwner: true,
             name:'Hacker',
             nick:nick
         });
         
         
-        pathers.push({
+        /*pathers.push({
             id:id,
             body:shape.body, 
             face:true,
@@ -1266,16 +1255,16 @@ function makeWorld() {
             index:0,
             speed:20,
             device:bot
-        })
+        })*/
         damageable.push({id:id, body:shape.body, damage:0});
-        potentialTerminals.push({
+        /*potentialTerminals*/terminals.push({
             id:id,
             name:nick, 
             body:shape.body, 
             contents:[], 
-            locked:true, 
-            hasScreen:false,
-            key:hackerKey
+            //locked:true, 
+            hasScreen:false/*,
+            key:hackerKey*/
         });
         colliders.push({
             id:id, 

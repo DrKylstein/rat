@@ -289,7 +289,13 @@ topHud.add(world.map);
 function Bar(height, lineWidth, spacing, length) {
     var root = new THREE.Object3D();
     for(var i= 0; i < length; i++) {
-        var box = makeBox(lineWidth, height, 0, SCREEN_COLORS[0], SCREEN_COLORS[0]);
+        var color = 0x00ff00;
+        if(i > length*2/3) {
+            color = 0xff0000;
+        } else if(i > length/3){
+            color = 0xffff00;
+        }
+        var box = makeBox(lineWidth, height, 0, color,color);
         box.position.x = i*(lineWidth+spacing);
         root.add(box);
     }
@@ -305,8 +311,9 @@ var BIG_LABEL = 0.03;
 var SMALL_LABEL = 0.025;
 var BAR_H = 0.03;
 var BAR_Y = VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
+var MAX_DAMAGE = 9;
 
-var damageBar = new Bar(BAR_H, 0.01, 0.005, 10);
+var damageBar = new Bar(BAR_H, 0.01, 0.005, MAX_DAMAGE);
 bottomHud.add(damageBar.display);
 damageBar.display.position.set(0.5 - 0.10, BAR_Y-BAR_H/2, 1);
 damageBar.display.rotation.y = Math.PI;
@@ -322,7 +329,7 @@ bottomHud.add(damageSymbol);
 damageBar.set(0);
 
 
-var radBar = new Bar(BAR_H, 0.01, 0.005, 10);
+var radBar = new Bar(BAR_H, 0.01, 0.005, MAX_DAMAGE);
 bottomHud.add(radBar.display);
 radBar.display.position.set(-0.5 + 0.10, BAR_Y-BAR_H/2, 1);
 var radSymbol = new THREE.Object3D();
@@ -658,6 +665,11 @@ function update(time) {
                                 world.rogueBots.splice(found.index, 1);
                                 world.bots.push(found.obj);
                                 updateBotLabels();
+                                
+                                var pather = findById(world.pathers, device.id);
+                                if(pather) {
+                                    world.pathers.splice(pather.index, 1);
+                                }
                             }
                         }
                         interfaceAction = handleFiles;
@@ -828,7 +840,7 @@ function update(time) {
                 
                 if(item.id == bot.id) noiseLevel = 1.0;
                 
-                if(item.damage > 5) {
+                /*if(item.damage > 5) {
                     var found = findById(world.pathers, item.id);
                     if(found) {
                         world.pathers.splice(found.index, 1);
@@ -839,7 +851,7 @@ function update(time) {
                         world.potentialTerminals.splice(found.index, 1);
                         world.terminals.push(found.obj);
                     }
-                }
+                }*/
             });
             
             scene.remove(proj.body);
@@ -914,7 +926,7 @@ function update(time) {
             obj.body.position.y += obj.dy*delta;
         });
                 
-        world.damageable.filter(function(a){return a.damage > 10 || a.body.position.y < -10;}).forEach(function(item) {
+        world.damageable.filter(function(a){return a.damage > MAX_DAMAGE || a.body.position.y < -10;}).forEach(function(item) {
             var foundBot = findById(world.bots, item.id);
             if(foundBot) {
                 var deadBot = foundBot.obj;
@@ -965,9 +977,9 @@ function update(time) {
         });
         
         world.damageable.forEach(function(item){
-            if(item.damage > 0) {
+            //if(item.damage > 0) {
                 item.damage = Math.max(0, item.damage - 0.2*delta);
-                if(item.damage < 4) {
+                /*if(item.damage < 4) {
                     if(!findById(world.bots, item.id)) {
                         var found = findById(pausedPathers, item.id);
                         if(found) {
@@ -980,8 +992,8 @@ function update(time) {
                             world.potentialTerminals.push(found.obj);
                         }
                     }
-                }
-            }
+                }*/
+            //}
         });
 
         
