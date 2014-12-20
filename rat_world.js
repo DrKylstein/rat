@@ -756,6 +756,12 @@ function makeWorld() {
         building.obj.localToWorld(pos);
         return new THREE.Box3().setFromCenterAndSize(pos, building.size);
     });
+    buildings.forEach(function(building){
+        building.rooms.forEach(function(room) {
+            room.userData.bounds = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0,0,0), room.userData.size);
+            room.userData.bounds.applyMatrix4(room.matrixWorld);
+        });
+    });
 
     buildings.forEach(function(building){
         var box = makeLineBox(150,150,SCREEN_COLORS[0]);
@@ -769,7 +775,7 @@ function makeWorld() {
     map.scale.set(1/Math.max(cityWidth+2000, cityDepth+2000), 1/Math.max(cityWidth+2000, cityDepth+2000), 1);
     
     
-    function spawnTurret() {
+    function spawnTurret(killBox) {
         var root = new THREE.Object3D();
         var bottom = 0;
         
@@ -789,7 +795,7 @@ function makeWorld() {
         gun.position.y = 1;
         
         
-        shooters.push({id:head.id, gun:head, cooldown:0});
+        shooters.push({id:head.id, gun:head, cooldown:0, killBox:killBox, direction:1});
         damageable.push({id:head.id, damage:0, body:head});
         
         return root;
@@ -927,13 +933,15 @@ function makeWorld() {
         } else {
             room = Random.choose(building.rooms);
             if(i < 3) {
-                var left = spawnTurret();
+                var left = spawnTurret(room.userData.bounds);
                 left.position.x = -room.userData.size.x/2 + 5/2;
+                left.rotation.y = -Math.PI/2;
                 room.add(left);
                 obstacles.push(new THREE.Box3().setFromObject(left));
             }
-            var right = spawnTurret();
+            var right = spawnTurret(room.userData.bounds);
             right.position.x = +room.userData.size.x/2 - 5/2;
+            right.rotation.y = Math.PI/2;
             room.add(right);
             obstacles.push(new THREE.Box3().setFromObject(right));
         }

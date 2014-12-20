@@ -578,6 +578,14 @@ function getLight() {
     return oldest;
 }
 
+getLookVector = function() {
+    // assumes the camera itself is not rotated
+    var direction = new THREE.Vector3( 0, 0, -1 );
+    return function(obj, v) {
+        v.copy(direction).applyEuler(obj.rotation);
+        return v;
+    }
+}();
 
 var v = new THREE.Vector3(0,0,0);
 var v2 = new THREE.Vector3(0,0,0);
@@ -749,46 +757,57 @@ function update(time) {
         var targetPos = bot.body.position.clone();
         targetPos.y += 5;
         world.shooters.forEach(function(shooter){
+            shooter.cooldown = Math.max(shooter.cooldown - delta, 0);
             v.copy(targetPos);
             shooter.gun.parent.worldToLocal(v);
-            m.lookAt(shooter.gun.position, v, UP);
-            shooter.gun.rotation.setFromRotationMatrix(m);
-            
-            if(shooter.cooldown <= 0 && v.length() < 50) {
-                var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
-                var pos = new THREE.Vector3(0,-1,-3);
-                beam.position.copy(shooter.gun.localToWorld(pos));
-                beam.lookAt(targetPos);
-                
-                var start = shooter.gun.position.clone();
-                shooter.gun.parent.localToWorld(start);
-                
-                var velocity = start.clone();
-                velocity.sub(targetPos);
-                velocity.negate();
-                velocity.normalize();
-                velocity.multiplyScalar(150);
-                
-                var light = getLight();
-                light.body.color.setHex(0xffff00);
-                light.body.intensity = 0.5;
-                light.body.distance = 10;
-                light.owner = beam.id;
-                light.body.position.copy(beam.position);
-                light.time = performance.now();
-                
-                projectiles.push({
-                    owner:shooter.id,
-                    id:beam.id,
-                    start:start,
-                    body:beam,
-                    velocity:velocity,
-                    light:light
-                });
-                scene.add(beam);
-                shooter.cooldown = 1.0;
+            //m.lookAt(shooter.gun.position, v, UP);
+            //shooter.gun.rotation.setFromRotationMatrix(m);
+            getLookVector(shooter.gun, v2);
+            v.normalize();
+            v2.normalize();
+            if(v.dot(v2) > 0.8 && shooter.killBox.containsPoint(bot.body.position)) {
+                if(shooter.cooldown <= 0) {
+                    var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
+                    var pos = new THREE.Vector3(0,-1,-3);
+                    beam.position.copy(shooter.gun.localToWorld(pos));
+                    beam.lookAt(targetPos);
+                    
+                    var start = shooter.gun.position.clone();
+                    shooter.gun.parent.localToWorld(start);
+                    
+                    var velocity = start.clone();
+                    velocity.sub(targetPos);
+                    velocity.negate();
+                    velocity.normalize();
+                    velocity.multiplyScalar(150);
+                    
+                    var light = getLight();
+                    light.body.color.setHex(0xffff00);
+                    light.body.intensity = 0.5;
+                    light.body.distance = 10;
+                    light.owner = beam.id;
+                    light.body.position.copy(beam.position);
+                    light.time = performance.now();
+                    
+                    projectiles.push({
+                        owner:shooter.id,
+                        id:beam.id,
+                        start:start,
+                        body:beam,
+                        velocity:velocity,
+                        light:light
+                    });
+                    scene.add(beam);
+                    shooter.cooldown = 0.25;
+                }
             } else {
-               shooter.cooldown -= delta;
+                shooter.gun.rotation.y = shooter.gun.rotation.y + 
+                    Math.PI*delta*shooter.direction/4;
+                if(shooter.gun.rotation.y > Math.PI/2) {
+                   shooter.direction = -1;
+                } else if(shooter.gun.rotation.y < -Math.PI/2) {
+                    shooter.direction = 1;
+                }
             }
         });
         
