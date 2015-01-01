@@ -1,3 +1,32 @@
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+var listener = audioCtx.listener;
+listener.dopplerFactor = 1;
+listener.speedOfSound = 343.3;
+var warblers = [];
+
+
+var bufferSize = 2 * audioCtx.sampleRate,
+    noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate),
+    output = noiseBuffer.getChannelData(0);
+for (var i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+}
+var whiteNoise = audioCtx.createBufferSource();
+whiteNoise.buffer = noiseBuffer;
+whiteNoise.loop = true;
+whiteNoise.start(0);
+//var noiseFilter = audioCtx.createBiquadFilter();
+//noiseFilter.type = 'lowpass';
+//noiseFilter.frequency.value = 1500;
+var noiseGain = audioCtx.createGain();
+noiseGain.gain.value = 0;
+whiteNoise.connect(/*noiseFilter*/noiseGain);
+//noiseFilter.connect(noiseGain);
+noiseGain.connect(audioCtx.destination);
+
+var NOISE_VOL = 0.125;
+
+
 function findById(arr, id) {
     var index = -1;
     var obj = null;
@@ -177,7 +206,7 @@ function keydown(event){
 }
 
 var cooldown = 0;
-function mousedown(event){
+/*function mousedown(event){
     if(bot.canShoot && cooldown <= 0) {
         var beam = makeBox(0.5, 0.5, 5, 0xff00ff, 0xff00ff);
         var pos = new THREE.Vector3(0,-2,0);
@@ -209,7 +238,7 @@ function mousedown(event){
         scene.add(beam);
         cooldown = 0.25;
     }
-}
+}*/
 
 var compass = new THREE.Object3D();
 (function(){
@@ -621,6 +650,14 @@ function update(time) {
 
     if(controls.enabled || time == 0) { //when not paused, or on first frame
         
+        listener.setPosition(bot.body.position.x, bot.body.position.y, bot.body.position.z);
+        controls.getLookVector(v);
+        listener.setOrientation(v.x, -v.y, v.z, UP.x, UP.y, UP.z);
+        
+        warblers.forEach(function(warbler){
+            warbler.gainNode.gain.value = (Math.sin(time*warbler.rate)*warbler.factor + 1)/2;
+        });
+        
         if(world.terminals.every(function(device){
             if(device === client) return true;
             v.set(0,0,0);
@@ -801,13 +838,34 @@ function update(time) {
                     light.body.position.copy(beam.position);
                     light.time = performance.now();
                     
+                    var noise = audioCtx.createOscillator();
+                    noise.type = 'sawtooth';
+                    noise.frequency.value = 300;
+                    noise.start();
+                    
+                    var gain = audioCtx.createGain();
+                    warblers.push({
+                        gainNode: gain,
+                        factor: 1,
+                        rate: 0.1
+                    });
+                    
+                    var panner = audioCtx.createPanner();
+                    panner.setPosition(beam.position.x, beam.position.y, beam.position.z);
+                    panner.setVelocity(velocity.x, velocity.y, velocity.z);
+                    
+                    noise.connect(gain);
+                    gain.connect(panner);
+                    panner.connect(audioCtx.destination);
+                    
                     projectiles.push({
                         owner:shooter.id,
                         id:beam.id,
                         start:start,
                         body:beam,
                         velocity:velocity,
-                        light:light
+                        light:light,
+                        sound:panner
                     });
                     scene.add(beam);
                     shooter.cooldown = 0.25;
@@ -866,6 +924,7 @@ function update(time) {
             if(proj.id == proj.light.owner) {
                 proj.light.body.position.copy(proj.body.position);
             }
+            proj.sound.setPosition(proj.body.position.x, proj.body.position.y, proj.body.position.z);
         });
         deadProjectiles.forEach(function(proj){
             projectiles.splice(projectiles.indexOf(proj), 1);
@@ -874,6 +933,7 @@ function update(time) {
                 proj.light.body.intensity = 0;
                 proj.light.owner = -1;
             }
+            proj.sound.disconnect();
         });
         
         
@@ -1044,7 +1104,7 @@ function update(time) {
     
     compass.rotation.y = bot.body.rotation.y;
     
-    
+    noiseGain.gain.value = noiseLevel*NOISE_VOL;
     if(noiseLevel > 0) {
         noiseLevel = Math.max(0,noiseLevel - 1.0*delta);
     }
