@@ -61,7 +61,7 @@ var noiseGain = audioCtx.createGain();
 noiseGain.gain.value = 0;
 whiteNoise.connect(noiseGain);
 noiseGain.connect(master);
-var NOISE_VOL = 0.25;
+var NOISE_VOL = 0.5;
 
 
 function findById(arr, id) {
@@ -244,38 +244,7 @@ function keydown(event){
 
 var cooldown = 0;
 function mousedown(event){
-    //doShotSound();
-    /*if(bot.canShoot && cooldown <= 0) {
-        var beam = makeBox(0.5, 0.5, 5, 0xff00ff, 0xff00ff);
-        var pos = new THREE.Vector3(0,-2,0);
-        beam.position.copy(bot.eye.localToWorld(pos));
-        var v = new THREE.Vector3(0.0,0.0,1.0);
-        controls.getLookVector(v);
-        v.multiplyScalar(bot.radius+5);
-        beam.position.add(v);
-        controls.getLookVector(v);
-        v.multiplyScalar(150);
-        beam.lookAt(new THREE.Vector3().addVectors(beam.position, v));
-        
-        var light = getLight();
-        light.body.color.setHex(0xff00ff);
-        light.body.intensity = 0.5;
-        light.body.distance = 10;
-        light.owner = beam.id;
-        light.body.position.copy(beam.position);
-        light.time = performance.now();
-        
-        projectiles.push({
-            owner:bot.id,
-            id:beam.id,
-            start:new THREE.Vector3().copy(bot.body.position),
-            body:beam,
-            velocity:v,
-            light:light
-        });
-        scene.add(beam);
-        cooldown = 0.25;
-    }*/
+
 }
 
 var compass = new THREE.Object3D();
@@ -332,18 +301,6 @@ var compass = new THREE.Object3D();
 hudScene.add(compass);
 compass.visible = false;
 
-
-/*var crosshair = makeLines( SCREEN_COLORS[0], THREE.LinePieces, [
-    new THREE.Vector3(-0.5, 0.5, 0),new THREE.Vector3(-0.1, 0.1, 0),
-    new THREE.Vector3(0.5, 0.5, 0),new THREE.Vector3(0.1, 0.1, 0),
-    new THREE.Vector3(0.5, -0.5, 0),new THREE.Vector3(0.1, -0.1, 0),
-    new THREE.Vector3(-0.5, -0.5, 0),new THREE.Vector3(-0.1, -0.1, 0),
-]);
-crosshair.scale.set(0.15,0.15,1.0);
-crosshair.position.z = 1;
-centerHud.add(crosshair);
-crosshair.visible = false;*/
-
 var VSPACE = 0.015;
 
 world.map.position.z = 1;
@@ -357,9 +314,9 @@ function Bar(height, lineWidth, spacing, length) {
     var root = new THREE.Object3D();
     for(var i= 0; i < length; i++) {
         var color = 0x00ff00;
-        if(i > length*2/3) {
+        if(i >= length*2/3) {
             color = 0xff0000;
-        } else if(i > length/3){
+        } else if(i >= length/3){
             color = 0xffff00;
         }
         var box = makeBox(lineWidth, height, 0, color,color);
@@ -378,7 +335,7 @@ var BIG_LABEL = 0.03;
 var SMALL_LABEL = 0.025;
 var BAR_H = 0.03;
 var BAR_Y = VSPACE + BIG_LABEL + VSPACE + BAR_H/2;
-var MAX_DAMAGE = 9;
+var MAX_DAMAGE = 6;
 
 var damageBar = new Bar(BAR_H, 0.01, 0.005, MAX_DAMAGE);
 bottomHud.add(damageBar.display);
@@ -512,7 +469,6 @@ function setBot(fn) {
     controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
     updateRampaks();
     botIndicator.position.x = fn*0.25 - 0.5 + 0.25/2;
-    //crosshair.visible = bot.canShoot;
 }
 setBot(0);
 
@@ -725,7 +681,6 @@ function update(time) {
                             speed:1.0, 
                             alpha:0
                         });
-                        //terminalEmulator.position.y = 0.0;
                     }
                     if(!device.locked || (bot.hacker && !device.key) || (device.key && client.contents.indexOf(device.key) != -1)) {
                         monitor.clear();
@@ -843,8 +798,6 @@ function update(time) {
             shooter.cooldown = Math.max(shooter.cooldown - delta, 0);
             v.copy(targetPos);
             shooter.gun.parent.worldToLocal(v);
-            //m.lookAt(shooter.gun.position, v, UP);
-            //shooter.gun.rotation.setFromRotationMatrix(m);
             getLookVector(shooter.gun, v2);
             v.normalize();
             v2.normalize();
@@ -911,21 +864,7 @@ function update(time) {
                 }
             ).forEach(function(item){
                 item.damage += 1;
-                
                 if(item.id == bot.id) noiseLevel = 1.0;
-                
-                /*if(item.damage > 5) {
-                    var found = findById(world.pathers, item.id);
-                    if(found) {
-                        world.pathers.splice(found.index, 1);
-                        pausedPathers.push(found.obj);
-                    }
-                    var found = findById(world.potentialTerminals, item.id);
-                    if(found) {
-                        world.potentialTerminals.splice(found.index, 1);
-                        world.terminals.push(found.obj);
-                    }
-                }*/
             });
             
             scene.remove(proj.body);
@@ -1051,30 +990,8 @@ function update(time) {
         });
         
         world.damageable.forEach(function(item){
-            //if(item.damage > 0) {
-                item.damage = Math.max(0, item.damage - 0.2*delta);
-                /*if(item.damage < 4) {
-                    if(!findById(world.bots, item.id)) {
-                        var found = findById(pausedPathers, item.id);
-                        if(found) {
-                            pausedPathers.splice(found.index, 1);
-                            world.pathers.push(found.obj);
-                        }
-                        var found = findById(world.terminals, item.id);
-                        if(found) {
-                            world.terminals.splice(found.index, 1);
-                            world.potentialTerminals.push(found.obj);
-                        }
-                    }
-                }*/
-            //}
+            item.damage = Math.max(0, item.damage - 0.2*delta);
         });
-
-        
-        //shooting cooldown of current bot
-        if(cooldown > 0)
-            cooldown -= delta;
-        
         
         var radiation = world.safeZone.distanceToPoint(bot.body.position)/30;
         radBar.set(radiation);
@@ -1086,9 +1003,7 @@ function update(time) {
                 noiseLevel = 1.0;
         }
         
-        
         damageBar.set(botDamage.obj.damage);
-        
         
         controls.update(delta);
     }
