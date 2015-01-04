@@ -2,7 +2,49 @@ var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 var listener = audioCtx.listener;
 listener.dopplerFactor = 1;
 listener.speedOfSound = 343.3;
-var warblers = [];
+var master = audioCtx.createGain();
+master.gain.value = 0.5;
+master.connect(audioCtx.destination);
+
+
+function doShotSound() {
+    var factor = 0.5;
+    var cAttack = 0.1;
+    var cRelease = 0.5;
+    var cSustain = 1.0;
+    var cHold = 0.5;
+    var mAttack = 0.125;
+    var mRelease = 0.125;
+    var depth = 1200;
+    var mHold = 0.25;
+
+    var carrier = audioCtx.createOscillator();
+    var modulator = audioCtx.createOscillator();
+    var cGain = audioCtx.createGain();
+    var mGain = audioCtx.createGain();
+    modulator.connect(mGain);
+    mGain.connect(carrier.detune);
+    carrier.connect(cGain);
+    cGain.connect(master);
+    carrier.type = 'sine';
+    modulator.type = 'sine';
+
+    cGain.gain.value = 0;
+    mGain.gain.value = 0;
+
+
+    modulator.start();
+    carrier.start();
+
+    carrier.frequency.value = 330;
+    modulator.frequency.value = carrier.frequency.value * factor;
+    
+    cGain.gain.linearRampToValueAtTime(cSustain, audioCtx.currentTime + cAttack);
+    mGain.gain.linearRampToValueAtTime(depth, audioCtx.currentTime + mAttack);
+
+    cGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + cAttack + cHold + cRelease);
+    mGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + mAttack + mHold + mRelease);
+}
 
 
 var bufferSize = 2 * audioCtx.sampleRate,
@@ -15,16 +57,11 @@ var whiteNoise = audioCtx.createBufferSource();
 whiteNoise.buffer = noiseBuffer;
 whiteNoise.loop = true;
 whiteNoise.start(0);
-//var noiseFilter = audioCtx.createBiquadFilter();
-//noiseFilter.type = 'lowpass';
-//noiseFilter.frequency.value = 1500;
 var noiseGain = audioCtx.createGain();
 noiseGain.gain.value = 0;
-whiteNoise.connect(/*noiseFilter*/noiseGain);
-//noiseFilter.connect(noiseGain);
-noiseGain.connect(audioCtx.destination);
-
-var NOISE_VOL = 0.125;
+whiteNoise.connect(noiseGain);
+noiseGain.connect(master);
+var NOISE_VOL = 0.25;
 
 
 function findById(arr, id) {
@@ -176,7 +213,7 @@ function lockChangeAlert() {
     document.webkitPointerLockElement === canvas;
     controls.enabled = state;
     pauseMessage.visible = !state;
-    crosshair.visible = state;
+    //crosshair.visible = state;
     compass.visible = state;
     if(state) {
         window.addEventListener("keydown", keydown, false);
@@ -206,8 +243,9 @@ function keydown(event){
 }
 
 var cooldown = 0;
-/*function mousedown(event){
-    if(bot.canShoot && cooldown <= 0) {
+function mousedown(event){
+    //doShotSound();
+    /*if(bot.canShoot && cooldown <= 0) {
         var beam = makeBox(0.5, 0.5, 5, 0xff00ff, 0xff00ff);
         var pos = new THREE.Vector3(0,-2,0);
         beam.position.copy(bot.eye.localToWorld(pos));
@@ -237,8 +275,8 @@ var cooldown = 0;
         });
         scene.add(beam);
         cooldown = 0.25;
-    }
-}*/
+    }*/
+}
 
 var compass = new THREE.Object3D();
 (function(){
@@ -295,7 +333,7 @@ hudScene.add(compass);
 compass.visible = false;
 
 
-var crosshair = makeLines( SCREEN_COLORS[0], THREE.LinePieces, [
+/*var crosshair = makeLines( SCREEN_COLORS[0], THREE.LinePieces, [
     new THREE.Vector3(-0.5, 0.5, 0),new THREE.Vector3(-0.1, 0.1, 0),
     new THREE.Vector3(0.5, 0.5, 0),new THREE.Vector3(0.1, 0.1, 0),
     new THREE.Vector3(0.5, -0.5, 0),new THREE.Vector3(0.1, -0.1, 0),
@@ -304,7 +342,7 @@ var crosshair = makeLines( SCREEN_COLORS[0], THREE.LinePieces, [
 crosshair.scale.set(0.15,0.15,1.0);
 crosshair.position.z = 1;
 centerHud.add(crosshair);
-crosshair.visible = false;
+crosshair.visible = false;*/
 
 var VSPACE = 0.015;
 
@@ -474,7 +512,7 @@ function setBot(fn) {
     controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
     updateRampaks();
     botIndicator.position.x = fn*0.25 - 0.5 + 0.25/2;
-    crosshair.visible = bot.canShoot;
+    //crosshair.visible = bot.canShoot;
 }
 setBot(0);
 
@@ -654,10 +692,6 @@ function update(time) {
         controls.getLookVector(v);
         listener.setOrientation(v.x, -v.y, v.z, UP.x, UP.y, UP.z);
         
-        warblers.forEach(function(warbler){
-            warbler.gainNode.gain.value = (Math.sin(time*warbler.rate)*warbler.factor + 1)/2;
-        });
-        
         if(world.terminals.every(function(device){
             if(device === client) return true;
             v.set(0,0,0);
@@ -816,6 +850,9 @@ function update(time) {
             v2.normalize();
             if(v.dot(v2) > 0.8 && shooter.killBox.containsPoint(bot.body.position)) {
                 if(shooter.cooldown <= 0) {
+                    
+                    doShotSound();
+                    
                     var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
                     var pos = new THREE.Vector3(0,-1,-3);
                     beam.position.copy(shooter.gun.localToWorld(pos));
@@ -838,34 +875,13 @@ function update(time) {
                     light.body.position.copy(beam.position);
                     light.time = performance.now();
                     
-                    var noise = audioCtx.createOscillator();
-                    noise.type = 'sawtooth';
-                    noise.frequency.value = 300;
-                    noise.start();
-                    
-                    var gain = audioCtx.createGain();
-                    warblers.push({
-                        gainNode: gain,
-                        factor: 1,
-                        rate: 0.1
-                    });
-                    
-                    var panner = audioCtx.createPanner();
-                    panner.setPosition(beam.position.x, beam.position.y, beam.position.z);
-                    panner.setVelocity(velocity.x, velocity.y, velocity.z);
-                    
-                    noise.connect(gain);
-                    gain.connect(panner);
-                    panner.connect(audioCtx.destination);
-                    
                     projectiles.push({
                         owner:shooter.id,
                         id:beam.id,
                         start:start,
                         body:beam,
                         velocity:velocity,
-                        light:light,
-                        sound:panner
+                        light:light
                     });
                     scene.add(beam);
                     shooter.cooldown = 0.25;
@@ -924,7 +940,6 @@ function update(time) {
             if(proj.id == proj.light.owner) {
                 proj.light.body.position.copy(proj.body.position);
             }
-            proj.sound.setPosition(proj.body.position.x, proj.body.position.y, proj.body.position.z);
         });
         deadProjectiles.forEach(function(proj){
             projectiles.splice(projectiles.indexOf(proj), 1);
@@ -933,7 +948,6 @@ function update(time) {
                 proj.light.body.intensity = 0;
                 proj.light.owner = -1;
             }
-            proj.sound.disconnect();
         });
         
         
