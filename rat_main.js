@@ -598,7 +598,7 @@ for(var i = 0; i < MAX_LIGHTS; i++) {
 function getLight() {
     var oldest = lights[0];
     for(var i = 0; i < lights.length; i++) {
-        if(lights[i].owner = -1) {
+        if(lights[i].owner == -1) {
             return lights[i];
         }
         if(lights[i].time < oldest.time) {

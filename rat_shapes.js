@@ -118,6 +118,31 @@ function makeStaticLabel(text, height, color) {
     return hudSprite;
 }
 
+function makeSign(text, height, color) {
+    var hudCanvas = document.createElement('canvas');
+    hudCanvas.width = 8*text.length;
+    hudCanvas.height = 16;
+    var hudCtx = hudCanvas.getContext('2d');
+    var hudTex = new THREE.Texture(hudCanvas);
+    hudTex.magFilter = THREE.NearestFilter;
+    var box = makeBox(text.length*height/2, height, 0, null, hudTex);
+    hudCtx.imageSmoothingEnabled = false;
+    hudCtx.clearRect(0,0,hudCanvas.width,hudCanvas.height);
+    text = text.toUpperCase();
+    for(var i = 0; i < text.length; i++) {
+        var index = text.codePointAt(i)-32;
+        hudCtx.globalCompositeOperation = 'source-over';
+        hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
+        hudCtx.globalCompositeOperation = 'source-in';
+        hudCtx.fillStyle = new THREE.Color(color).getStyle();
+        hudCtx.fillRect(0,0, hudCanvas.width, hudCanvas.height);
+    }
+    hudTex.needsUpdate = true;
+    box.children[0].material.transparent = true;
+    return box;
+}
+
+
 function Label(height, color) {
     var hudCanvas = document.createElement('canvas');
     var hudCtx = hudCanvas.getContext('2d');

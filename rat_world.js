@@ -126,7 +126,7 @@ function makeWorld() {
     '\'s Diner',
     '\'s Place',
     ' Travel',
-    '\'s Burgers',
+    '\'s Sandwiches',
     '\'s Pizza'
     ];
             
@@ -135,11 +135,15 @@ function makeWorld() {
     var map = new THREE.Object3D();
     map.rotation.x = Math.PI;
         
+    var REPAIRSHOP_DIST = 1000;
+    
+    var wD = 2;
     var xBlocks = 3;
     var zBlocks = 2;
     var lotSize = 200;
     var roadSize = 100;
     var alleySize = 50;
+    var sidewalkSize = 20;
     var xLots = 2;
     var zLots = 3;
     var heightFactor = 100;
@@ -213,15 +217,6 @@ function makeWorld() {
         map.add(pier);
     }
     
-    for(var z = 0; z < zBlocks; z++) {
-        for(var x = 0; x < xBlocks; x++) {
-            var height = 100;
-            var block = makeBlock(xLots,zLots,lotSize,height);
-            block.position.z = z*blockDepth + alleySize;
-            block.position.x = x*blockWidth + roadSize;
-            root.add(block);
-        }
-    }
     var intersections = {};
     for(var z = 0; z <= zBlocks; z++) {
         intersections[z] = {};
@@ -233,69 +228,151 @@ function makeWorld() {
         }
     }
     
-    function makeBlock(width, depth, lotSize, height) {
-        var root = new THREE.Object3D();
-        var sz = [width*lotSize, depth*lotSize];
-        var sidewalk = makeBox(sz[0], 3, sz[1], ENV_COLORS[0], ENV_COLORS[1]);
-        sidewalk.position.x = sz[0]/2;
-        sidewalk.position.z = sz[1]/2;
-        root.add(sidewalk);
-        obstacleNodes.push(sidewalk);
-        
-        var lamps = [[-1,-1], [1,1], [-1,1], [1,-1], [1,0], [-1,0]];
-        
-        lamps.forEach(function(f){
-            var lamp = makeLamp();
-            lamp.position.y = 3;
-            lamp.position.x = sidewalk.position.x + (sz[0]/2 - (3/2 + 2))*f[0];
-            lamp.position.z = sidewalk.position.z + (sz[1]/2 - (3/2 + 2))*f[1];
-            root.add(lamp);
-        });
-        for(var z = 0; z < depth; z++) {
-            for(var x = 0; x < width; x++) {
-                if(Math.random() > 0.6) {
-                    var building = makeRubble(lotSize-75, ENV_COLORS[0], 0x000000);
-                    building.position.set(x*lotSize + lotSize/2, 3, z*lotSize + lotSize/2);
-                    root.add(building);
-                } else {
-                    var side = [];
-                    if(x == 0) side.push(-Math.PI/2);
-                    if(x == width - 1) side.push(Math.PI/2);
-                    if(z == 0) side.push(Math.PI);
-                    if(z == depth - 1) side.push(0);
-                    var style = Random.choose(BUILDING_COLORS);
+
+    var lots = [];
+    for(var bz = 0; bz < zBlocks; bz++) {
+        for(var bx = 0; bx < xBlocks; bx++) {
+            var block = 
+                (function makeBlock(width, depth) {
+                    var root = new THREE.Object3D();
+                    var sidewalk = makeBox(width, 3, depth, ENV_COLORS[0], ENV_COLORS[1]);
+                    sidewalk.position.x = width/2;
+                    sidewalk.position.z = depth/2;
+                    root.add(sidewalk);
+                    obstacleNodes.push(sidewalk);
                     
-                    var building = makeBuilding(lotSize-75, 
-                        Math.max(Random.normal(60, 300), 30), style, 0x000000);
-                    building.position.set(x*lotSize + lotSize/2, 3, z*lotSize + lotSize/2);
-                    building.rotation.y = Random.choose(side);
-                    root.add(building);
+                    var lamps = [[-1,-1], [1,1], [-1,1], [1,-1]/*, [1,0], [-1,0]*/];
+                    
+                    function makeLamp() {
+                        var root = new THREE.Object3D();
+                        var base = makeBox(2,10,2, ENV_COLORS[0], ENV_COLORS[1]);
+                        root.add(base);
+                        var pole = makeBox(1,20,1, ENV_COLORS[0], ENV_COLORS[1]);
+                        pole.position.y = 10;
+                        root.add(pole);
+                        var light = makeBox(3,3,3, 0x00ff00, 0x00ff00);
+                        light.position.y = 30;
+                        root.add(light);
+                        if(Math.random() > 0.75) {
+                            root.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+                            root.rotation.z = Random.real(-Math.PI/6, Math.PI/6);
+                            if(Math.random() > 0.5) 
+                            root.remove(light);
+                        }
+                        obstacleNodes.push(root);
+                        
+                        return root;
+                    }
+                    
+                    lamps.forEach(function(f){
+                        var lamp = makeLamp();
+                        lamp.position.y = 3;
+                        lamp.position.x = sidewalk.position.x + (width/2 - (3/2 + 2))*f[0];
+                        lamp.position.z = sidewalk.position.z + (depth/2 - (3/2 + 2))*f[1];
+                        root.add(lamp);
+                    });
+                    return root;
+                })(lotSize*xLots, lotSize*zLots);
+            block.position.x = bx*blockWidth + roadSize;
+            block.position.z = bz*blockDepth + alleySize;
+            root.add(block);
+            for(var lz = 0; lz < zLots; lz++) {
+                for(var lx = 0; lx < xLots; lx++) {
+                    var lot = new THREE.Box3(
+                        new THREE.Vector3(
+                            lx*lotSize + sidewalkSize, 
+                            3, 
+                            lz*lotSize + sidewalkSize
+                        ), 
+                        new THREE.Vector3(
+                            (lx+1)*lotSize - sidewalkSize, 
+                            103,
+                            (lz+1)*lotSize - sidewalkSize
+                        )
+                    );
+                    lot.translate(block.position);
+                    var side = [];
+                    if(lx == 0) side.push(-Math.PI/2);
+                    if(lx == xLots - 1) side.push(Math.PI/2);
+                    if(lz == 0) side.push(Math.PI);
+                    if(lz == zLots - 1) side.push(0);
+
+                    lots.push({space:lot, facings:side});
                 }
             }
         }
-        return root;
     }
-
-    function makeLamp() {
-        var root = new THREE.Object3D();
-        var base = makeBox(2,10,2, ENV_COLORS[0], ENV_COLORS[1]);
-        root.add(base);
-        var pole = makeBox(1,20,1, ENV_COLORS[0], ENV_COLORS[1]);
-        pole.position.y = 10;
-        root.add(pole);
-        var light = makeBox(3,3,3, 0x00ff00, 0x00ff00);
-        light.position.y = 30;
-        root.add(light);
-        if(Math.random() > 0.75) {
-            root.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
-            root.rotation.z = Random.real(-Math.PI/6, Math.PI/6);
-            if(Math.random() > 0.5) 
-            root.remove(light);
+    
+    var repairShops = [];
+    
+    Random.shuffle(lots);
+    
+    lots.forEach(function(lot){
+        var size = lot.space.size();
+        var center = lot.space.center();
+        var building;
+        var color;
+        var nearest = repairShops.length? repairShops[0].center().distanceTo(center) : Number.MAX_VALUE;
+        for(var i = 1; i < repairShops.length; i++) {
+            var dist = repairShops[i].center().distanceTo(center);
+            if(dist < nearest) {
+                nearest = dist;
+            }
         }
-        obstacleNodes.push(root);
+        if(nearest > REPAIRSHOP_DIST) {
+            color = 0xff0000;
+            var bounds = flattenDegenerateTree(subdivide(
+                new THREE.Vector2(-size.x/2,-size.z/2), 
+                new THREE.Vector2(size.x/2, size.z/2), 
+                20, 
+                false
+            )).map(function(corners) {return shrink(wD/2, corners);});
+            
+            building = makeBuilding(size.x, 30, color, 0);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height, true);
+            building.add(layout);
+            
+            repairShops.push(lot.space);
+            name = Random.choose(NAMES.concat(BIG_ADJECTIVES)) + ' Robot Repair';
+        } else {
+            var height = Math.max(Random.normal(200, 300), 30);
+            var name;
+            if(height > 120) {
+                name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
+                name += Random.choose(BIG_BUSINESSES);
+                name += Random.choose(CORPORATIONS);
+            } else {
+                name = Random.choose(NAMES);
+                name += Random.choose(SMALL_BUSINESSES);
+            }
+
+            color = Random.choose(BUILDING_COLORS);
+            
+            building = makeBuilding(size.x, height, color, 0);
+            
+            var bounds = flattenDegenerateTree(subdivide(
+                new THREE.Vector2(-size.x/2,-size.z/2), 
+                new THREE.Vector2(size.x/2, size.z/2), 
+                20, 
+                false
+            )).map(function(corners) {return shrink(wD/2, corners);});
+
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height);
+            building.add(layout);
+        }
         
-        return root;
-    }
+        building.position.set(center.x, lot.space.min.y, center.z);
+        building.rotation.y = Random.choose(lot.facings);
+        root.add(building);
+        
+        var sign = makeSign(name, 4, color);
+        sign.position.z = size.z/2 + 1;
+        sign.position.x = -size.x/4;
+        sign.position.y = 15;
+        building.add(sign);
+
+    });
+    
     
     function makeRubble(diameter, color, backColor) {
         var wD = 2;
@@ -341,9 +418,8 @@ function makeWorld() {
     
     function makeBuilding(diameter, height, color, backColor) {
         var root = new THREE.Object3D();
-        var wD = 2;
 
-        var startHeight = 20;// + Math.random()*50;
+        var startHeight = 20;
         var topHeight = height - startHeight;
         
         var door;
@@ -398,44 +474,22 @@ function makeWorld() {
             
             return root;
         })();
-        //groundFloor.visible = false;
         root.add(groundFloor);
 
         var interior = makeInterior(diameter-wD*2, color, color & 0x444444);
         root.add(interior);
-        //interior.visible = false;
         
-        var layout = makeInnerLayout(diameter-wD*2, 20 - 0.1, diameter-wD, 2, color, color & 0x444444, height);
-        root.add(layout);
-        
-        portalDoors.push({door:door, inside:layout, size:new THREE.Vector2(diameter-2, diameter-2)});
-        layout.visible = false;
-        
-        var name;
         var top; 
         if(topHeight > 100) {
-            name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
-            name += Random.choose(BIG_BUSINESSES);
-            name += Random.choose(CORPORATIONS);
-        
-
             if(Math.random() > 0.5) {
                     top = makeTower(diameter, topHeight, diameter, color, backColor);
             } else {
                     top = makeModernBuilding(diameter, topHeight, diameter, color, backColor);
             }
         } else {
-            name = Random.choose(NAMES);
-            name += Random.choose(SMALL_BUSINESSES);
             top = makeSimpleBuilding(diameter, topHeight, diameter, color, backColor);
         }
-        
-        var sign = new THREE.Mesh(new THREE.TextGeometry(name, {size:3, height:1}), makeShaderMat(color, color));
-        sign.position.z = diameter/2;
-        sign.position.x = 2 - diameter/2;
-        sign.position.y = 15;
-        root.add(sign);
-        
+                
         top.position.y = startHeight;
         obstacleNodes.push(top);
         root.add(top);
@@ -497,18 +551,8 @@ function makeWorld() {
         return root;
     }
         
-    function makeInnerLayout(width, height, depth, wallThickness, color, backColor, bh) {
+    function makeInnerLayout(bounds, width, height, depth, wallThickness, color, backColor, bh) {
         var root = new THREE.Object3D();
-        var bounds = flattenDegenerateTree(
-            subdivide(
-                new THREE.Vector2(-width/2,-depth/2), 
-                new THREE.Vector2(width/2, depth/2), 
-                20, 
-                false
-            )
-        ).map(function(corners) {
-            return shrink(wallThickness/2, corners);
-        });
         var areas = bounds.map(cornersToCenterSize);
         
         var backmostPos = 5000;
