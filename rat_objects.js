@@ -116,3 +116,42 @@ function makeCeilingLight() {
     
     return root;
 }
+
+function makeRepairStation() {
+    var root = new THREE.Object3D();
+    var top = 0;
+    
+    var torso = makeBox(6,9,6, 0xffffff, 0x888888);
+    torso.rotation.y = Math.PI/4;
+    pointify(torso.children[0].geometry, 9, 0.5, 0.5);
+    root.add(torso);
+    top += 9;
+    
+    var head = makeBox(7,4,7, 0xffffff, 0x888888);
+    head.children[0].rotation.x = Math.PI;
+    pointify(head.children[0].geometry, 4, 0.5, 0.5);
+    head.position.y = top;
+    top += 4;
+    root.add(head);
+    
+    var eye = makeBox(1,1,1, 0xff00ff, 0x440044);
+    eye.position.y = 1;
+    eye.position.z = 3;
+    eye.position.x = -1;
+    head.add(eye);
+
+    var eye = makeBox(1,1,1, 0xff00ff, 0x440044);
+    eye.position.y = 1;
+    eye.position.z = 3;
+    eye.position.x = 1;
+    head.add(eye);
+
+
+    var light = makeBox(1.5,1.5,1, 0xffff00, 0x888800);
+    light.position.y = 2.25;
+    light.position.z = 3;
+    head.add(light);
+    
+    
+    return {body:root, head:head};
+}

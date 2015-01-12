@@ -16,6 +16,8 @@ function makeWorld() {
     var potentialTerminals = [];
     var map;
     var shooters = [];
+    var lookers = [];
+    var healers = [];
     
     var gridTex = new THREE.ImageUtils.loadTexture("rat_grid.png");
     gridTex.wrapS = THREE.RepeatWrapping; 
@@ -307,9 +309,113 @@ function makeWorld() {
     
     Random.shuffle(lots);
     
+        var hackerKey = {
+        name:'hacker key',
+        description:[
+            'Unlock a robot that can', 
+            'hack computers.',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+    };
+
+    var eyeKey = {
+        name:'eye key',
+        description:[
+            'Unlock a flying robot.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+
+    var radar = {
+        name:'Radar',
+        description:[
+            'See other robots on the',
+            'map.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+    
+    var prgMap = {
+        name:'Map',
+        description:[
+            'Shows a map of the city',
+            'on the GPS display.',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' '
+        ]
+    };
+    
+    var mcp = [
+        {
+            name:'MCP 1/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        },
+        {
+            name:'MCP 2/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        },
+        {
+            name:'MCP 3/3',
+            description:[
+                'Restore central control of', 
+                'city systems.',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+        }
+    ];
+
+    var programs = [
+        //hackerKey,
+        mcp[0],
+        mcp[1],
+        mcp[2],
+        eyeKey,
+        radar,
+        prgMap,
+    ];
+    
+    var startPos = null;
+    
     lots.forEach(function(lot){
         var size = lot.space.size();
         var center = lot.space.center();
+        center.y = lot.space.min.y;
         var building;
         var color;
         var nearest = repairShops.length? repairShops[0].center().distanceTo(center) : Number.MAX_VALUE;
@@ -319,8 +425,17 @@ function makeWorld() {
                 nearest = dist;
             }
         }
-        if(nearest > REPAIRSHOP_DIST) {
-            color = 0xff0000;
+        if(startPos === null) {
+            var name = 'Central Processing'
+
+            color = 0x8800ff;
+            
+            building = makeBuilding(size.x, 300, color, 0);
+            
+            startPos = center;
+            
+        } else if(nearest > REPAIRSHOP_DIST) {
+            color = 0xff00ff;
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
                 new THREE.Vector2(size.x/2, size.z/2), 
@@ -329,11 +444,57 @@ function makeWorld() {
             )).map(function(corners) {return shrink(wD/2, corners);});
             
             building = makeBuilding(size.x, 30, color, 0);
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height, true);
-            building.add(layout);
+            //var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height, true);
+            //building.add(layout);
+            var station = makeRepairStation();
+            building.add(station.body);
+            lookers.push(station.head);
+            obstacleNodes.push(station.body);
+            healers.push(station.body);
             
             repairShops.push(lot.space);
             name = Random.choose(NAMES.concat(BIG_ADJECTIVES)) + ' Robot Repair';
+        } else if(programs.length > 0) {
+            var height = Math.max(Random.normal(200, 300), 100);
+            var name;
+            
+            name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
+            name += " Software";
+            name += Random.choose(CORPORATIONS);
+
+            color = 0x00ffff;
+            
+            building = makeBuilding(size.x, height, color, 0);
+            
+            var bounds = flattenDegenerateTree(subdivide(
+                new THREE.Vector2(-size.x/2,-size.z/2), 
+                new THREE.Vector2(size.x/2, size.z/2), 
+                20, 
+                false
+            )).map(function(corners) {return shrink(wD/2, corners);});
+
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height);
+            building.add(layout);
+            
+            var computerRoom = Random.choose(bounds.filter(function(bound){
+                return bound.min.y <= wD - size.z/2;
+            }));
+            
+            var mainframe = makeMainframe();
+            var c = computerRoom.center();
+            mainframe.position.set(c.x, 0, c.y);
+            building.add(mainframe);
+            obstacleNodes.push(mainframe);
+            terminals.push({
+                id:mainframe.id,
+                body:mainframe, 
+                name:name, 
+                contents:[programs.pop()], 
+                locked:true,
+                hasScreen:true,
+                readOnly: 1
+            });
+            
         } else {
             var height = Math.max(Random.normal(200, 300), 30);
             var name;
@@ -346,7 +507,7 @@ function makeWorld() {
                 name += Random.choose(SMALL_BUSINESSES);
             }
 
-            color = Random.choose(BUILDING_COLORS);
+            color = 0xffffff;//Random.choose(BUILDING_COLORS);
             
             building = makeBuilding(size.x, height, color, 0);
             
@@ -645,14 +806,14 @@ function makeWorld() {
         if(useX) {
             var x = Random.real(min.x+limit,max.x-limit);
             return [
-                {min:new THREE.Vector2(x, min.y), max:new THREE.Vector2(max.x, max.y)},
-                {min:new THREE.Vector2(min.x, min.y), max:new THREE.Vector2(x, max.y)}
+                new THREE.Box2(new THREE.Vector2(x, min.y), new THREE.Vector2(max.x, max.y)),
+                new THREE.Box2(new THREE.Vector2(min.x, min.y),new THREE.Vector2(x, max.y))
             ];
         } else {
             var y = Random.real(min.y+limit,max.y-limit);
             return [
-                {min:new THREE.Vector2(min.x, y), max:new THREE.Vector2(max.x, max.y)},
-                {min:new THREE.Vector2(min.x, min.y), max:new THREE.Vector2(max.x, y)}
+                new THREE.Box2(new THREE.Vector2(min.x, y), new THREE.Vector2(max.x, max.y)),
+                new THREE.Box2(new THREE.Vector2(min.x, min.y), new THREE.Vector2(max.x, y))
             ];
         }
     }
@@ -845,111 +1006,7 @@ function makeWorld() {
         return root;
     }
     
-    
-    
-    
-    var hackerKey = {
-        name:'hacker key',
-        description:[
-            'Unlock a robot that can', 
-            'hack computers.',
-            '',
-            '',
-            '',
-            '',
-            ''
-        ]
-    };
-
-    var eyeKey = {
-        name:'eye key',
-        description:[
-            'Unlock a flying robot.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
-    };
-
-    var radar = {
-        name:'Radar',
-        description:[
-            'See other robots on the',
-            'map.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
-    };
-    
-    var prgMap = {
-        name:'Map',
-        description:[
-            'Shows a map of the city',
-            'on the GPS display.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
-    };
-    
-    var mcp = [
-        {
-            name:'MCP 1/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
-        },
-        {
-            name:'MCP 2/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
-        },
-        {
-            name:'MCP 3/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
-        }
-    ];
-
-    var programs = [
-        //hackerKey,
-        mcp[0],
-        mcp[1],
-        mcp[2],
-        eyeKey,
-        radar,
-        prgMap,
-    ];
-        
-    Random.shuffle(buildings);
+    /*Random.shuffle(buildings);
     buildings.sort(function(a,b){return b.height - a.height;});
         
     var startRoom;
@@ -1018,7 +1075,7 @@ function makeWorld() {
                 obstacles.push(new THREE.Box3().setFromObject(table));
             }
         });
-    });
+    });*/
 
 
     function makeMarker() {
@@ -1059,8 +1116,8 @@ function makeWorld() {
         return {body:root, eye:camera};
     }
 
-    var startPos = new THREE.Vector3(0,0,0);
-    startRoom.localToWorld(startPos);
+    //var startPos = new THREE.Vector3(0,0,0);
+    //startRoom.localToWorld(startPos);
     (function(){
         var shape = (function() {
             var root= new THREE.Object3D();
@@ -1354,6 +1411,8 @@ function makeWorld() {
         mapDetail:mapDetail,
         mcp:mcp,
         indoors:indoors,
-        shooters:shooters
+        shooters:shooters,
+        lookers:lookers,
+        healers:healers
     };
 }

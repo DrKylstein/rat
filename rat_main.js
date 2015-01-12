@@ -850,6 +850,13 @@ function update(time) {
             }
         });
         
+        world.lookers.forEach(function(looker){
+            v.copy(bot.body.position);
+            looker.parent.worldToLocal(v);
+            v.y = looker.position.y;
+            looker.lookAt(v);
+        });
+        
         var deadProjectiles = [];
         projectiles.forEach(function(proj){
             raycaster.near = 0;
@@ -990,7 +997,13 @@ function update(time) {
         });
         
         world.damageable.forEach(function(item){
-            item.damage = Math.max(0, item.damage - 0.2*delta);
+            if(world.healers.some(function(healer) {
+                v.copy(item.body.position);
+                healer.worldToLocal(v);
+                return v.lengthSq() < 15*15;
+            })) {
+                item.damage = Math.max(0, item.damage - 0.2*delta);
+            }
         });
         
         var radiation = world.safeZone.distanceToPoint(bot.body.position)/30;
