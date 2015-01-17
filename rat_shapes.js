@@ -112,7 +112,11 @@ function makeStaticLabel(text, height, color) {
     text = text.toUpperCase();
     for(var i = 0; i < text.length; i++) {
         var index = text.codePointAt(i)-32;
+        hudCtx.globalCompositeOperation = 'source-over';
         hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
+        hudCtx.globalCompositeOperation = 'source-in';
+        hudCtx.fillStyle = new THREE.Color(color).getStyle();
+        hudCtx.fillRect(0,0, hudCanvas.width, hudCanvas.height);
     }
     hudTex.needsUpdate = true;
     return hudSprite;
@@ -160,7 +164,11 @@ function Label(height, color) {
         hudSprite.scale.set(height*text.length/2, height);
         for(var i = 0; i < text.length; i++) {
             var index = text.codePointAt(i)-32;
+            hudCtx.globalCompositeOperation = 'source-over';
             hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
+            hudCtx.globalCompositeOperation = 'source-in';
+            hudCtx.fillStyle = new THREE.Color(color).getStyle();
+            hudCtx.fillRect(0,0, hudCanvas.width, hudCanvas.height);
         }
         hudTex.needsUpdate = true;
     }

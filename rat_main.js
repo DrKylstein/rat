@@ -313,11 +313,11 @@ topHud.add(world.map);
 function Bar(height, lineWidth, spacing, length) {
     var root = new THREE.Object3D();
     for(var i= 0; i < length; i++) {
-        var color = 0x00ff00;
+        var color = BAR_COLORS[0];
         if(i >= length*2/3) {
-            color = 0xff0000;
+            color = BAR_COLORS[2];
         } else if(i >= length/3){
-            color = 0xffff00;
+            color = BAR_COLORS[1];
         }
         var box = makeBox(lineWidth, height, 0, color,color);
         box.position.x = i*(lineWidth+spacing);
@@ -341,7 +341,7 @@ var damageBar = new Bar(BAR_H, 0.01, 0.005, MAX_DAMAGE);
 bottomHud.add(damageBar.display);
 damageBar.display.position.set(0.5 - 0.10, BAR_Y-BAR_H/2, 1);
 damageBar.display.rotation.y = Math.PI;
-var damageSymbol = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
+var damageSymbol = makeLines(BAR_COLORS[2], THREE.LineStrip, [
     new THREE.Vector3(-0.5, 0.5, 0.0),
     new THREE.Vector3(0.5, 0.5, 0.0),
     new THREE.Vector3(0.0, -0.5, 0.0),
@@ -358,7 +358,7 @@ bottomHud.add(radBar.display);
 radBar.display.position.set(-0.5 + 0.10, BAR_Y-BAR_H/2, 1);
 var radSymbol = new THREE.Object3D();
 for(var i= 0; i < 3; i++) {
-    var foil = makeLines(SCREEN_COLORS[0], THREE.LineStrip, [
+    var foil = makeLines(BAR_COLORS[2], THREE.LineStrip, [
         new THREE.Vector3(-0.25, -0.5, 0.0),
         new THREE.Vector3(0.25, -0.5, 0.0),
         new THREE.Vector3(0.0, 0.0, 0.0),

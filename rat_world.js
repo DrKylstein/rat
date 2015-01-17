@@ -19,10 +19,10 @@ function makeWorld() {
     var lookers = [];
     var healers = [];
     
-    var gridTex = new THREE.ImageUtils.loadTexture("rat_grid.png");
-    gridTex.wrapS = THREE.RepeatWrapping; 
-    gridTex.wrapT = THREE.RepeatWrapping;
-    gridTex.anisotropy = 8;
+    //~ var gridTex = new THREE.ImageUtils.loadTexture("rat_grid.png");
+    //~ gridTex.wrapS = THREE.RepeatWrapping; 
+    //~ gridTex.wrapT = THREE.RepeatWrapping;
+    //~ gridTex.anisotropy = 8;
     
     var NAMES = [
     'Rodriguez',
@@ -252,7 +252,7 @@ function makeWorld() {
                         var pole = makeBox(1,20,1, ENV_COLORS[0], ENV_COLORS[1]);
                         pole.position.y = 10;
                         root.add(pole);
-                        var light = makeBox(3,3,3, 0x00ff00, 0x00ff00);
+                        var light = makeBox(3,3,3, ENV_COLORS[2], ENV_COLORS[2]);
                         light.position.y = 30;
                         root.add(light);
                         if(Math.random() > 0.75) {
@@ -428,14 +428,14 @@ function makeWorld() {
         if(startPos === null) {
             var name = 'Central Processing'
 
-            color = 0x8800ff;
+            color = START_COLORS[0];
             
-            building = makeBuilding(size.x, 300, color, 0);
+            building = makeBuilding(size.x, 300, START_COLORS[0], START_COLORS[1]);
             
             startPos = center;
             
         } else if(nearest > REPAIRSHOP_DIST) {
-            color = 0xff00ff;
+            color = REPAIR_COLORS[0];
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
                 new THREE.Vector2(size.x/2, size.z/2), 
@@ -443,7 +443,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
             
-            building = makeBuilding(size.x, 30, color, 0);
+            building = makeBuilding(size.x, 30, REPAIR_COLORS[0], REPAIR_COLORS[1]);
             //var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height, true);
             //building.add(layout);
             var station = makeRepairStation();
@@ -462,7 +462,7 @@ function makeWorld() {
             name += " Software";
             name += Random.choose(CORPORATIONS);
 
-            color = 0x00ffff;
+            color = IMPORTANT_COLORS[0];
             
             building = makeBuilding(size.x, height, color, 0);
             
@@ -473,7 +473,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, IMPORTANT_COLORS[0], IMPORTANT_COLORS[1], height);
             building.add(layout);
             
             var computerRoom = Random.choose(bounds.filter(function(bound){
@@ -507,9 +507,9 @@ function makeWorld() {
                 name += Random.choose(SMALL_BUSINESSES);
             }
 
-            color = 0xffffff;//Random.choose(BUILDING_COLORS);
+            color = ENV_COLORS[0];//Random.choose(BUILDING_COLORS);
             
-            building = makeBuilding(size.x, height, color, 0);
+            building = makeBuilding(size.x, height, ENV_COLORS[0], ENV_COLORS[1]);
             
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
@@ -518,7 +518,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
         }
         
@@ -595,7 +595,7 @@ function makeWorld() {
             west = makeBox(diameter, height, 0.1, color, backColor);
             
             
-            door = makeBox(10, 20, 1.8, 0xff0000, 0x880000);
+            door = makeBox(10, 20, 1.8, backColor, color);
             door.position.z = -1;
             doors.push(door);
             south.add(door);
@@ -705,7 +705,7 @@ function makeWorld() {
         east.rotation.y = Math.PI/2;
         west.rotation.y = Math.PI/2;
         
-        var cieling = makeBox(diameter, 0, diameter, 0xffffff, 0xaaaaaa);
+        var cieling = makeBox(diameter, 0, diameter, color, backColor);
         cieling.position.y = 20 - 0.1;
         root.add(cieling);
                 
@@ -750,7 +750,7 @@ function makeWorld() {
             frontWall.position.x = areas[i].center.x;
             frontWall.position.z = areas[i].center.y + areas[i].size.y/2 + wallThickness/2;
             root.add(frontWall);
-            var door = makeBox(10, height, 0.8, 0xff0000, 0x880000);
+            var door = makeBox(10, height, 0.8, backColor, color);
             doors.push(door);
             frontWall.add(door);
         }
@@ -899,7 +899,7 @@ function makeWorld() {
         var wallHeight = Random.integer(3,10);
         
         while(bottom < height) {
-            var window = makeBox(width, windowHeight, depth, color, color&0x444444);
+            var window = makeBox(width, windowHeight, depth, ENV_COLORS[0], ENV_COLORS[1]);
             window.position.y = bottom;
             bottom += windowHeight;
             root.add(window);
@@ -936,11 +936,11 @@ function makeWorld() {
     world = root;
     
     
-    var land = makeLineBox(landWidth, landDepth, 0x00ff00, 0x000000);
+    var land = makeLineBox(landWidth, landDepth, SCREEN_COLORS[0], null);
     land.position.set(landCenter.x, landCenter.y, 0);
     map.add(land);
     
-    var mapbg = makeLineBox(cityWidth+2000, cityDepth+2000, 0x00ff00, 0x000000);
+    var mapbg = makeLineBox(cityWidth+2000, cityDepth+2000, SCREEN_COLORS[0], null);
     mapbg.position.set(cityWidth/2, cityDepth/2, 0);
     
     map.add(mapbg);
