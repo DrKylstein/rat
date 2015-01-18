@@ -464,7 +464,7 @@ function makeWorld() {
 
             color = IMPORTANT_COLORS[0];
             
-            building = makeBuilding(size.x, height, color, 0);
+            building = makeBuilding(size.x, height, color, IMPORTANT_COLORS[1]);
             
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
@@ -637,7 +637,7 @@ function makeWorld() {
         })();
         root.add(groundFloor);
 
-        var interior = makeInterior(diameter-wD*2, color, color & 0x444444);
+        var interior = makeInterior(diameter-wD*2, color, backColor);
         root.add(interior);
         
         var top; 
