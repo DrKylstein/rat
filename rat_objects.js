@@ -40,12 +40,12 @@ function Monitor(color, backColor) {
 var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 function makeMainframe() {
     var root = new THREE.Object3D();
-    var base = makeBox(10,6,5, 0x0000ff, 0x000088);
+    var base = makeBox(10,6,5, IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
     root.add(base);
     
     var bottom = 6;
     
-    var mid = makeBox(10,7,4,0x0000ff, 0x000088);
+    var mid = makeBox(10,7,4,IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
     mid.position.y = bottom;
     mid.position.z = 4/2 - 5/2;
     root.add(mid);
@@ -59,19 +59,19 @@ function makeMainframe() {
     screen.position.x = -5/2 + 10/2 - 1;
     mid.add(screen);
 
-    var greeble = makeBox(2, 2*r, 0.25, 0xff0000, 0x880000);
+    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
     greeble.position.z = 2 + 0.25/2;
     greeble.position.y = 1.75;
     greeble.position.x = -10/2 + 2/2 + 1;
     mid.add(greeble);
     
-    var greeble = makeBox(2, 2*r, 0.25, 0xffff00, 0x888800);
+    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
     greeble.position.z = 2 + 0.25/2;
     greeble.position.y = 1.75 + 3*r;
     greeble.position.x = -10/2 + 2/2 + 1;
     mid.add(greeble);
     
-    var top = makeBox(10,2,5,0x0000ff, 0x000088);
+    var top = makeBox(10,2,5,IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
     top.position.y = bottom;
     root.add(top);
     
@@ -81,22 +81,24 @@ function makeMainframe() {
 function makeTable() {
     var root = new THREE.Object3D();
     
-    var top = makeBox(20,1,10, 0xff00ff, 0x880088);
+    var top = makeBox(20,1,10, ENV_COLORS[0], ENV_COLORS[1]);
     top.position.y = 5;
     root.add(top);
     
-    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    var leg = makeBox(1,5,1, ENV_COLORS[0], ENV_COLORS[1]);
     leg.position.set(-20/2 + 1/2, 0, -10/2 + 1/2);
     root.add(leg);
-    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    var leg = makeBox(1,5,1, ENV_COLORS[0], ENV_COLORS[1]);
     leg.position.set(20/2 - 1/2, 0, 10/2 - 1/2);
     root.add(leg);
-    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    var leg = makeBox(1,5,1, ENV_COLORS[0], ENV_COLORS[1]);
     leg.position.set(-20/2 + 1/2, 0, 10/2 - 1/2);
     root.add(leg);
-    var leg = makeBox(1,5,1, 0xcccccc, 0x888888);
+    var leg = makeBox(1,5,1, ENV_COLORS[0], ENV_COLORS[1]);
     leg.position.set(20/2 - 1/2, 0, -10/2 + 1/2);
     root.add(leg);
+    
+    root.userData.top = top.position.y + 1;
     
     return root;
 }
@@ -104,7 +106,7 @@ function makeTable() {
 function makeCeilingLight() {
     var root = new THREE.Object3D();
     
-    var top = makeBox(5,2,5, 0x0000ff, 0x000088);
+    var top = makeBox(5,2,5, ENV_COLORS[0], ENV_COLORS[1]);
     top.position.y = -2;
     root.add(top);
     
@@ -121,37 +123,56 @@ function makeRepairStation() {
     var root = new THREE.Object3D();
     var top = 0;
     
-    var torso = makeBox(6,9,6, 0xffffff, 0x888888);
+    var torso = makeBox(6,9,6, REPAIR_COLORS[0], REPAIR_COLORS[1]);
     torso.rotation.y = Math.PI/4;
     pointify(torso.children[0].geometry, 9, 0.5, 0.5);
     root.add(torso);
     top += 9;
     
-    var head = makeBox(7,4,7, 0xffffff, 0x888888);
+    var head = makeBox(7,4,7, REPAIR_COLORS[0], REPAIR_COLORS[1]);
     head.children[0].rotation.x = Math.PI;
     pointify(head.children[0].geometry, 4, 0.5, 0.5);
     head.position.y = top;
     top += 4;
     root.add(head);
     
-    var eye = makeBox(1,1,1, 0xff00ff, 0x440044);
+    var eye = makeBox(1,1,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
     eye.position.y = 1;
     eye.position.z = 3;
     eye.position.x = -1;
     head.add(eye);
 
-    var eye = makeBox(1,1,1, 0xff00ff, 0x440044);
+    var eye = makeBox(1,1,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
     eye.position.y = 1;
     eye.position.z = 3;
     eye.position.x = 1;
     head.add(eye);
 
 
-    var light = makeBox(1.5,1.5,1, 0xffff00, 0x888800);
+    var light = makeBox(1.5,1.5,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
     light.position.y = 2.25;
     light.position.z = 3;
     head.add(light);
     
     
     return {body:root, head:head};
+}
+
+function makeDesktop() {
+    var root = new THREE.Object3D();
+    var top = 0;
+    
+    var base = makeBox(5,6,4, ENV_COLORS[0], ENV_COLORS[1]);
+    root.add(base);
+    
+    var screen = makeBox(4,3,0.5, ENV_COLORS[0], ENV_COLORS[1]);
+    root.add(screen);
+    screen.position.set(0,2,2.25);
+    
+    var keyboard = makeBox(5,0.5,2, ENV_COLORS[0], ENV_COLORS[1]);
+    
+    keyboard.position.z = 3;
+    root.add(keyboard);
+    
+    return root;
 }

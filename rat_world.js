@@ -427,7 +427,21 @@ function makeWorld() {
             
             building = makeBuilding(size.x, 300, START_COLORS[0], START_COLORS[1]);
             
-            startPos = center;
+            var bounds = flattenDegenerateTree(subdivide(
+                new THREE.Vector2(-size.x/2,-size.z/2), 
+                new THREE.Vector2(size.x/2, size.z/2), 
+                20, 
+                false
+            )).map(function(corners) {return shrink(wD/2, corners);});
+
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            building.add(layout);
+            
+            startPos = center.clone();
+            var startRoom = Random.choose(bounds);
+            var c = startRoom.center();
+            startPos.x += c.x;
+            startPos.z += c.y;
             
         } else if(nearest > REPAIRSHOP_DIST) {
             color = REPAIR_COLORS[0];
@@ -439,8 +453,6 @@ function makeWorld() {
             )).map(function(corners) {return shrink(wD/2, corners);});
             
             building = makeBuilding(size.x, 30, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-            //var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, color, color & 0x444444, height, true);
-            //building.add(layout);
             var station = makeRepairStation();
             building.add(station.body);
             lookers.push(station.head);
@@ -468,7 +480,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, IMPORTANT_COLORS[0], IMPORTANT_COLORS[1], height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
             
             var computerRoom = Random.choose(bounds.filter(function(bound){
@@ -612,7 +624,7 @@ function makeWorld() {
             west = makeBox(diameter, height, 0.1, color, backColor);
             
             
-            door = makeBox(10, 20, 1.8, backColor, color);
+            door = makeBox(10, 20, 1.8, DOOR_COLORS[0], DOOR_COLORS[1]);
             door.position.z = -1;
             doors.push(door);
             south.add(door);
@@ -654,7 +666,7 @@ function makeWorld() {
         })();
         root.add(groundFloor);
 
-        var interior = makeInterior(diameter-wD*2, color, backColor);
+        var interior = makeInterior(diameter-wD*2, ENV_COLORS[0], ENV_COLORS[1]);
         root.add(interior);
         
         var top; 
@@ -755,9 +767,52 @@ function makeWorld() {
                 root.add(leftWall);
                 obstacleNodes.push(leftWall);
             }
-            var light = makeCeilingLight();
-            light.position.y = height;
-            room.add(light);
+            var LIGHT_SPACING = 40;
+            var places = [];
+            for(var x = 0; x < area.size.x/2 - 5; x+= LIGHT_SPACING) {
+                for(var z = 0; z < area.size.y/2 - 5; z+= LIGHT_SPACING) {
+                    var light = makeCeilingLight();
+                    light.position.y = height;
+                    light.position.x = x;
+                    light.position.z = z;
+                    room.add(light);
+                    places.push([x,z]);
+                    if(x!= 0 || z != 0) {
+                        var light = makeCeilingLight();
+                        light.position.y = height;
+                        light.position.x = -x;
+                        light.position.z = z;
+                        room.add(light);
+                        places.push([-x,z]);
+                        
+                        var light = makeCeilingLight();
+                        light.position.y = height;
+                        light.position.x = x;
+                        light.position.z = -z;
+                        room.add(light);
+                        places.push([x,-z]);
+                    
+                        var light = makeCeilingLight();
+                        light.position.y = height;
+                        light.position.x = -x;
+                        light.position.z = -z;
+                        room.add(light);
+                        places.push([-x,-z]);
+                    }
+                }
+            }
+            if(area.size.x > 40 && area.size.y > 40) {
+                places.forEach(function(place){
+                    var table = makeTable();
+                    table.position.x = place[0];
+                    table.position.z = place[1];
+                    room.add(table);
+                    obstacleNodes.push(table);
+                    var desktop = makeDesktop();
+                    desktop.position.y = table.userData.top;
+                    table.add(desktop);
+                });
+            }
         });
         
         buildings.push(meta);
@@ -767,7 +822,7 @@ function makeWorld() {
             frontWall.position.x = areas[i].center.x;
             frontWall.position.z = areas[i].center.y + areas[i].size.y/2 + wallThickness/2;
             root.add(frontWall);
-            var door = makeBox(10, height, 0.8, backColor, color);
+            var door = makeBox(10, height, 0.8, DOOR_COLORS[0], DOOR_COLORS[1]);
             doors.push(door);
             frontWall.add(door);
         }
