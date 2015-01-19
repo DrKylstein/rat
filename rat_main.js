@@ -1012,7 +1012,7 @@ function update(time) {
                 healer.worldToLocal(v);
                 return v.lengthSq() < 15*15;
             })) {
-                item.damage = Math.max(0, item.damage - 0.2*delta);
+                item.damage = Math.max(0, item.damage - 2*delta);
             }
         });
         
