@@ -334,8 +334,10 @@ function makeWorld() {
         name:'Mission',
         description:
         'The essential systems of the city are out of control. '+
-        'Find the scattered pieces of the Master Control Program and assemble '+
-        'them here to restore order.'
+        'Find the scattered pieces of the Master Control Program and assemble'+
+        ' them here to restore order. The Hacker can add other robots and '+
+        'terminals to your control. Take good care of it and seek out other '+
+        'robots that can aid in your mission. Good luck!'
     }
 
     var programs = [
