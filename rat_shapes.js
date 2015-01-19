@@ -111,7 +111,7 @@ function makeStaticLabel(text, height, color) {
     hudCtx.clearRect(0,0,hudCanvas.width,hudCanvas.height);
     text = text.toUpperCase();
     for(var i = 0; i < text.length; i++) {
-        var index = text.codePointAt(i)-32;
+        var index = text.charCodeAt(i)-32;
         hudCtx.globalCompositeOperation = 'source-over';
         hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
         hudCtx.globalCompositeOperation = 'source-in';
@@ -134,7 +134,7 @@ function makeSign(text, height, color) {
     hudCtx.clearRect(0,0,hudCanvas.width,hudCanvas.height);
     text = text.toUpperCase();
     for(var i = 0; i < text.length; i++) {
-        var index = text.codePointAt(i)-32;
+        var index = text.charCodeAt(i)-32;
         hudCtx.globalCompositeOperation = 'source-over';
         hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
         hudCtx.globalCompositeOperation = 'source-in';
@@ -163,7 +163,7 @@ function Label(height, color) {
         text = text.toUpperCase();
         hudSprite.scale.set(height*text.length/2, height);
         for(var i = 0; i < text.length; i++) {
-            var index = text.codePointAt(i)-32;
+            var index = text.charCodeAt(i)-32;
             hudCtx.globalCompositeOperation = 'source-over';
             hudCtx.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,0, 8,16);
             hudCtx.globalCompositeOperation = 'source-in';

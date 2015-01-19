@@ -21,7 +21,7 @@ function Monitor(color, backColor) {
     this.println = function(text) {
         text = text.toUpperCase();
         for(var i = 0; i < text.length; i++) {
-            var index = text.codePointAt(i)-32;
+            var index = text.charCodeAt(i)-32;
             monitor.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,cy*16, 8,16);
         }
 
