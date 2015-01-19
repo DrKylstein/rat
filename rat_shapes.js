@@ -40,6 +40,24 @@ function makeBox(w, h, d, color, backColor) {
     return root;
 }
 
+function makeCylinder(w, h, color, backColor) {
+    var geometry = new THREE.CylinderGeometry(w, w, h, 9);
+    var material;
+    if(color === null) {
+        material = new THREE.MeshBasicMaterial({map:backColor});
+    } else {
+        material = makeShaderMat(color, backColor);
+    }
+    
+    var mesh = new THREE.Mesh(geometry, material);
+    var root = new THREE.Object3D();
+    mesh.position.y = h/2;
+    
+    root.add(mesh);
+    return root;
+}
+
+
 function pointify(geometry, h, px, pz) {
     for(var i = 0; i < geometry.vertices.length; i++) {
         geometry.vertices[i].x *= 1.0 - px*(geometry.vertices[i].y + h/2)/h;

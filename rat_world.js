@@ -448,36 +448,44 @@ function makeWorld() {
             startRoom.position.set(c.x, 0, c.y);
             building.add(startRoom);
             
-            var SPACING = 30;
-            var MARGIN = 15;
+            var SPACING = 20;
+            var MARGIN = 10;
             bounds.forEach(function(bound, i){
                 if(i == 0) return;
                 var c = bound.center();
                 var s = bound.size();
                 if(s.x > 40 && s.y > 40) {
-                    for(var x = 0; x < s.x/2 - MARGIN; x+= SPACING) {
+                    for(var x = SPACING; x < s.x/2 - MARGIN; x+= SPACING) {
                         for(var z = 0; z < s.y/2 - MARGIN; z+= SPACING) {
-                            var drive = makeTapeDrive();
+                            var drive = makeTapeDrive(spinners);
                             drive.position.x = x + c.x;
                             drive.position.z = z + c.y;
+                            drive.rotation.y = -Math.PI/2;
                             building.add(drive);
+                            obstacleNodes.push(drive);
                             if(x!= 0) {
-                                var drive = makeTapeDrive();
+                                var drive = makeTapeDrive(spinners);
                                 drive.position.x = -x + c.x;
                                 drive.position.z = z + c.y;
+                                drive.rotation.y = Math.PI/2;
                                 building.add(drive);
+                                obstacleNodes.push(drive);
                             }
                             if(z != 0) {
-                                var drive = makeTapeDrive();
+                                var drive = makeTapeDrive(spinners);
                                 drive.position.x = x + c.x;
                                 drive.position.z = -z + c.y;
+                                drive.rotation.y = -Math.PI/2;
                                 building.add(drive);
+                                obstacleNodes.push(drive);
                             }
                             if(x != 0 && z != 0) {
-                                var drive = makeTapeDrive();
+                                var drive = makeTapeDrive(spinners);
                                 drive.position.x = -x + c.x;
                                 drive.position.z = -z + c.y;
+                                drive.rotation.y = Math.PI/2;
                                 building.add(drive);
+                                obstacleNodes.push(drive);
                             }
                         }
                     }
@@ -568,12 +576,12 @@ function makeWorld() {
                     var s = bound.size();
                     if(s.y > 40) {
                         for(var x = 0; x < s.x/2 - 10; x+= 40) {
-                            var tapeDrive = makeTapeDrive();
+                            var tapeDrive = makeTapeDrive(spinners);
                             tapeDrive.position.x = x+c.x;
                             tapeDrive.position.z = bound.min.y+5/2 + 10;
                             building.add(tapeDrive);
                             if(x!= 0) {
-                                var tapeDrive = makeTapeDrive();
+                                var tapeDrive = makeTapeDrive(spinners);
                                 tapeDrive.position.x = -x+c.x;
                                 tapeDrive.position.z = bound.min.y+5/2 + 10;
                                 building.add(tapeDrive);

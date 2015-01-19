@@ -181,32 +181,39 @@ function makeDesktop() {
     return root;
 }
 
-function makeTapeDrive() {
+function makeTapeDrive(spinners) {
     var root = new THREE.Object3D();
     var base = makeBox(10,6,5, ENV_COLORS[0], ENV_COLORS[1]);
     root.add(base);
     
     var bottom = 6;
     
-    var mid = makeBox(10,7,4,ENV_COLORS[0], ENV_COLORS[1]);
+    var mid = makeBox(10,7,5,ENV_COLORS[0], ENV_COLORS[1]);
     mid.position.y = bottom;
-    mid.position.z = 4/2 - 5/2;
+    //mid.position.z = 4/2 - 5/2;
     root.add(mid);
     bottom += 7;
-        
-    var r = 3/4;
+            
+    var tape = makeCylinder(2, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    tape.rotation.x = Math.PI/2;
+    tape.position.z = 5/2 + 0.25/2;
+    tape.position.y = 4.5;
+    tape.position.x = -2.5;
+    mid.add(tape);
+    spinners.push(tape);
     
-    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
-    greeble.position.z = 4/2 + 0.25/2;
-    greeble.position.y = 1.75;
-    greeble.position.x = -10/2 + 2/2 + 1;
-    mid.add(greeble);
+    var tape = makeCylinder(2, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    tape.rotation.x = Math.PI/2;
+    tape.position.z = 5/2 + 0.25/2;
+    tape.position.y = 4.5;
+    tape.position.x = 2.5;
+    mid.add(tape);
+    spinners.push(tape);
     
-    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
-    greeble.position.z = 4/2 + 0.25/2;
-    greeble.position.y = 1.75 + 3*r;
-    greeble.position.x = -10/2 + 2/2 + 1;
-    mid.add(greeble);
+    var head = makeBox(2,1,0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    head.position.y = 0.5;
+    head.position.z = 5/2 + 0.25/2;
+    mid.add(head);
     
     var top = makeBox(10,2,5,ENV_COLORS[0], ENV_COLORS[1]);
     top.position.y = bottom;
