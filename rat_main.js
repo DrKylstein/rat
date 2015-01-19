@@ -795,31 +795,37 @@ function update(time) {
         var targetPos = bot.body.position.clone();
         targetPos.y += 5;
         world.shooters.forEach(function(shooter){
-            v.copy(targetPos);
-            shooter.ref.worldToLocal(v);
-            var inBox = shooter.killBox.containsPoint(v);
-            
             shooter.cooldown = Math.max(shooter.cooldown - delta, 0);
-            v.copy(targetPos);
-            shooter.gun.parent.worldToLocal(v);
-            getLookVector(shooter.gun, v2);
-            v.normalize();
-            v2.normalize();
-            if(v.dot(v2) > 0.8 && inBox) {
+            
+            if(world.bots.some(function(target) {
+                v.copy(target.body.position);
+                v.y += 5;
+                shooter.ref.worldToLocal(v);
+                var inBox = shooter.killBox.containsPoint(v);
+                v.copy(target.body.position);
+                v.y += 5;
+                shooter.gun.parent.worldToLocal(v);
+                getLookVector(shooter.gun, v2);
+                v.normalize();
+                v2.normalize();
+                var inCone = v.dot(v2) > 0.99;
+                return inCone && inBox;
+            })) {
                 if(shooter.cooldown <= 0) {
                     
                     doShotSound();
                     
                     var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
-                    var pos = new THREE.Vector3(0,-1,-3);
-                    beam.position.copy(shooter.gun.localToWorld(pos));
-                    beam.lookAt(targetPos);
+                    beam.position.set(0,0,-3);
+                    shooter.gun.localToWorld(beam.position)
                     
                     var start = shooter.gun.position.clone();
                     shooter.gun.parent.localToWorld(start);
                     
+                    beam.lookAt(start);
+                    
                     var velocity = start.clone();
-                    velocity.sub(targetPos);
+                    velocity.sub(beam.position);
                     velocity.negate();
                     velocity.normalize();
                     velocity.multiplyScalar(150);
