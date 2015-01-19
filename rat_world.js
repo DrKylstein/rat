@@ -394,6 +394,19 @@ function makeWorld() {
             ]
         }
     ];
+        
+    var mission = {
+        name:'Mission',
+        description:[
+                'The essential systems of  ',
+                'the city are out of       ',
+                'control.                  ',
+                'Find the scattered pieces ', 
+                'of the Master Control     ',
+                'Program and assemble them ',
+                'here to restore order.    '
+        ]
+    }
 
     var programs = [
         //hackerKey,
@@ -420,6 +433,11 @@ function makeWorld() {
                 nearest = dist;
             }
         }
+        
+        function isBackRoom(bound) {
+            return bound.min.y <= wD - size.z/2;
+        }
+        
         if(startRoom == null) {
             var name = 'Central Processing'
 
@@ -436,22 +454,33 @@ function makeWorld() {
 
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
+                        
+            var backRooms = bounds.filter(isBackRoom);
             
-            //startPos = center.clone();
-            bounds.sort(function(a, b){
-                var sa = a.size();
-                var sb = b.size();
-                return sa.x*sa.y - sb.x*sb.y;
+            var computerRoom = backRooms[0];
+            
+            var mainframe = makeMainframe();
+            var c = computerRoom.center();
+            mainframe.position.set(c.x, 0, computerRoom.min.y + 5/2);
+            building.add(mainframe);
+            obstacleNodes.push(mainframe);
+            terminals.push({
+                id:mainframe.id,
+                body:mainframe, 
+                name:name, 
+                contents:[mission], 
+                locked:false,
+                hasScreen:true,
+                readOnly: 1
             });
+            
             startRoom = new THREE.Object3D();
-            var c = bounds[0].center();
             startRoom.position.set(c.x, 0, c.y);
             building.add(startRoom);
             
             var SPACING = 20;
             var MARGIN = 10;
             bounds.forEach(function(bound, i){
-                if(i == 0) return;
                 var c = bound.center();
                 var s = bound.size();
                 if(s.x > 40 && s.y > 40) {
@@ -534,9 +563,7 @@ function makeWorld() {
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
             
-            var computerRoom = Random.choose(bounds.filter(function(bound){
-                return bound.min.y <= wD - size.z/2;
-            }));
+            var computerRoom = Random.choose(bounds.filter(isBackRoom));
             
             var mainframe = makeMainframe();
             var c = computerRoom.center();
