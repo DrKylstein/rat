@@ -194,7 +194,7 @@ function makeTapeDrive() {
     root.add(mid);
     bottom += 7;
         
-    r = 3/4;
+    var r = 3/4;
     
     var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
     greeble.position.z = 4/2 + 0.25/2;
