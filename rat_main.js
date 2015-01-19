@@ -486,6 +486,7 @@ function showFiles() {
             monitor.println('');
         }
     }
+    monitor.setRow(-2 - 5);
     monitor.println(client.name+': '+(4-client.contents.length)+' blocks free');
     for(var i = 0; i < 4; i++) {
         if(i < client.contents.length) {
@@ -496,7 +497,8 @@ function showFiles() {
             monitor.println('');
         }
     }
-    monitor.println('Choose a file:');
+    monitor.setRow(-1);
+    monitor.println('Choose a file:_');
 }
 
 function handleFiles(fn) {
@@ -504,10 +506,8 @@ function handleFiles(fn) {
         monitor.clear();
         monitor.println(host.name+' -> '+host.contents[fn-1].name);
         monitor.println('');
-        host.contents[fn-1].description.forEach(function(line){
-            monitor.println(line);
-        });
-        monitor.println('');
+        monitor.println(host.contents[fn-1].description);
+        monitor.setRow(-1);
         if(host.readOnly && host.readOnly > fn-1) {
             monitor.println('[1] Save [0] Back');
         } else {
@@ -519,10 +519,8 @@ function handleFiles(fn) {
         monitor.clear();
         monitor.println(client.name+' -> '+client.contents[fn-5].name);
         monitor.println('');
-        client.contents[fn-5].description.forEach(function(line){
-            monitor.println(line);
-        });
-        monitor.println('');
+        monitor.println(client.contents[fn-5].description);
+        monitor.setRow(-1);
         monitor.println('[1] Save [2] Delete [0] Back');
         interfaceAction = handleBotSaveDelete(fn-5);
     }

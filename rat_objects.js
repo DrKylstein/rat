@@ -3,8 +3,10 @@ function Monitor(color, backColor) {
     var monitorCanvas = document.createElement('canvas');
     var monitor = monitorCanvas.getContext('2d');
     monitor.imageSmoothingEnabled = false;
-    monitorCanvas.width = 320;
-    monitorCanvas.height = 200;
+    var COLS = 40;
+    var ROWS = 15;
+    monitorCanvas.width = 8*COLS;
+    monitorCanvas.height = 16*ROWS;
     var monitorTex = new THREE.Texture(monitorCanvas);
     monitorTex.magFilter = THREE.NearestFilter;
     monitor.textAlign = 'left';
@@ -25,15 +27,34 @@ function Monitor(color, backColor) {
     this.println = function(text) {
         monitor.globalCompositeOperation = 'source-over';
         text = text.toUpperCase();
-        for(var i = 0; i < text.length; i++) {
-            var index = text.charCodeAt(i)-32;
-            monitor.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,cy*16, 8,16);
-        }
+        var words = text.split(' ');
+        var cx = 0;
+        words.forEach(function(word){
+            if(cx + word.length > COLS) {
+                cx = 0;
+                ++cy;
+            }
+            for(var i = 0; i < word.length; i++) {
+                var index = word.charCodeAt(i)-32;
+                monitor.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  cx*8,cy*16, 8,16);
+                ++cx;
+            }
+            cx++;
+
+        });
+        cx = 0;
         ++cy;
         monitor.globalCompositeOperation = 'darken';
         monitor.fillStyle = new THREE.Color(color).getStyle();
         monitor.fillRect(0,0, monitorCanvas.width,monitorCanvas.height);
         monitorTex.needsUpdate = true;
+    }
+    this.setRow = function(r) {
+        if(r >= 0) {
+            cy = r;
+        } else {
+            cy = ROWS + r;
+        }
     }
     
     this.clear();

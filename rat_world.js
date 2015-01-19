@@ -304,117 +304,44 @@ function makeWorld() {
     var repairShops = [];
     
     Random.shuffle(lots);
-    
-        var hackerKey = {
-        name:'hacker key',
-        description:[
-            'Unlock a robot that can', 
-            'hack computers.',
-            '',
-            '',
-            '',
-            '',
-            ''
-        ]
-    };
-
-    var eyeKey = {
-        name:'eye key',
-        description:[
-            'Unlock a flying robot.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
-    };
 
     var radar = {
         name:'Radar',
-        description:[
-            'See other robots on the',
-            'map.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
+        description:'See other robots on the GPS display.'
     };
     
     var prgMap = {
         name:'Map',
-        description:[
-            'Shows a map of the city',
-            'on the GPS display.',
-            ' ',
-            ' ',
-            ' ',
-            ' ',
-            ' '
-        ]
+        description:'Shows a map of the city on the GPS display.'
     };
     
     var mcp = [
         {
             name:'MCP 1/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
+            description:'Restore central control of city systems.'
         },
         {
             name:'MCP 2/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
+            description:'Restore central control of city systems.'
         },
         {
             name:'MCP 3/3',
-            description:[
-                'Restore central control of', 
-                'city systems.',
-                '',
-                '',
-                '',
-                '',
-                ''
-            ]
+            description:'Restore central control of city systems.'
         }
     ];
         
     var mission = {
         name:'Mission',
-        description:[
-                'The essential systems of  ',
-                'the city are out of       ',
-                'control.                  ',
-                'Find the scattered pieces ', 
-                'of the Master Control     ',
-                'Program and assemble them ',
-                'here to restore order.    '
-        ]
+        description:
+        'The essential systems of the city are out of control. '+
+        'Find the scattered pieces of the Master Control Program and assemble '+
+        'them here to restore order.'
     }
 
     var programs = [
-        //hackerKey,
         mcp[0],
         mcp[1],
         mcp[2],
-        eyeKey,
         radar,
         prgMap,
     ];
