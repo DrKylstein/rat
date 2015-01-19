@@ -40,12 +40,12 @@ function Monitor(color, backColor) {
 var monitor = new Monitor(SCREEN_COLORS[0], SCREEN_COLORS[1]);
 function makeMainframe() {
     var root = new THREE.Object3D();
-    var base = makeBox(10,6,5, IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
+    var base = makeBox(10,6,5, GOOD_COLORS[0], GOOD_COLORS[1]);
     root.add(base);
     
     var bottom = 6;
     
-    var mid = makeBox(10,7,4,IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
+    var mid = makeBox(10,7,4,GOOD_COLORS[0], GOOD_COLORS[1]);
     mid.position.y = bottom;
     mid.position.z = 4/2 - 5/2;
     root.add(mid);
@@ -59,19 +59,19 @@ function makeMainframe() {
     screen.position.x = -5/2 + 10/2 - 1;
     mid.add(screen);
 
-    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    var greeble = makeBox(2, 2*r, 0.25, GOOD_COLORS[0], GOOD_COLORS[1]);
     greeble.position.z = 2 + 0.25/2;
     greeble.position.y = 1.75;
     greeble.position.x = -10/2 + 2/2 + 1;
     mid.add(greeble);
     
-    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    var greeble = makeBox(2, 2*r, 0.25, GOOD_COLORS[0], GOOD_COLORS[1]);
     greeble.position.z = 2 + 0.25/2;
     greeble.position.y = 1.75 + 3*r;
     greeble.position.x = -10/2 + 2/2 + 1;
     mid.add(greeble);
     
-    var top = makeBox(10,2,5,IMPORTANT_COLORS[0], IMPORTANT_COLORS[1]);
+    var top = makeBox(10,2,5,GOOD_COLORS[0], GOOD_COLORS[1]);
     top.position.y = bottom;
     root.add(top);
     
@@ -173,6 +173,40 @@ function makeDesktop() {
     
     keyboard.position.z = 3;
     root.add(keyboard);
+    
+    return root;
+}
+
+function makeTapeDrive() {
+    var root = new THREE.Object3D();
+    var base = makeBox(10,6,5, ENV_COLORS[0], ENV_COLORS[1]);
+    root.add(base);
+    
+    var bottom = 6;
+    
+    var mid = makeBox(10,7,4,ENV_COLORS[0], ENV_COLORS[1]);
+    mid.position.y = bottom;
+    mid.position.z = 4/2 - 5/2;
+    root.add(mid);
+    bottom += 7;
+        
+    r = 3/4;
+    
+    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    greeble.position.z = 4/2 + 0.25/2;
+    greeble.position.y = 1.75;
+    greeble.position.x = -10/2 + 2/2 + 1;
+    mid.add(greeble);
+    
+    var greeble = makeBox(2, 2*r, 0.25, ENV_COLORS[0], ENV_COLORS[1]);
+    greeble.position.z = 4/2 + 0.25/2;
+    greeble.position.y = 1.75 + 3*r;
+    greeble.position.x = -10/2 + 2/2 + 1;
+    mid.add(greeble);
+    
+    var top = makeBox(10,2,5,ENV_COLORS[0], ENV_COLORS[1]);
+    top.position.y = bottom;
+    root.add(top);
     
     return root;
 }

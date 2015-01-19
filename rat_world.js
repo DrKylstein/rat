@@ -404,9 +404,9 @@ function makeWorld() {
         radar,
         prgMap,
     ];
-    
-    var startPos = null;
-    
+        
+    var startRoom = null;
+        
     lots.forEach(function(lot){
         var size = lot.space.size();
         var center = lot.space.center();
@@ -420,7 +420,7 @@ function makeWorld() {
                 nearest = dist;
             }
         }
-        if(startPos === null) {
+        if(startRoom == null) {
             var name = 'Central Processing'
 
             color = START_COLORS[0];
@@ -437,11 +437,54 @@ function makeWorld() {
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
             
-            startPos = center.clone();
-            var startRoom = Random.choose(bounds);
-            var c = startRoom.center();
-            startPos.x += c.x;
-            startPos.z += c.y;
+            //startPos = center.clone();
+            bounds.sort(function(a, b){
+                var sa = a.size();
+                var sb = b.size();
+                return sa.x*sa.y - sb.x*sb.y;
+            });
+            startRoom = new THREE.Object3D();
+            var c = bounds[0].center();
+            startRoom.position.set(c.x, 0, c.y);
+            building.add(startRoom);
+            
+            var SPACING = 30;
+            var MARGIN = 15;
+            bounds.forEach(function(bound, i){
+                if(i == 0) return;
+                var c = bound.center();
+                var s = bound.size();
+                if(s.x > 40 && s.y > 40) {
+                    for(var x = 0; x < s.x/2 - MARGIN; x+= SPACING) {
+                        for(var z = 0; z < s.y/2 - MARGIN; z+= SPACING) {
+                            var drive = makeTapeDrive();
+                            drive.position.x = x + c.x;
+                            drive.position.z = z + c.y;
+                            building.add(drive);
+                            if(x!= 0) {
+                                var drive = makeTapeDrive();
+                                drive.position.x = -x + c.x;
+                                drive.position.z = z + c.y;
+                                building.add(drive);
+                            }
+                            if(z != 0) {
+                                var drive = makeTapeDrive();
+                                drive.position.x = x + c.x;
+                                drive.position.z = -z + c.y;
+                                building.add(drive);
+                            }
+                            if(x != 0 && z != 0) {
+                                var drive = makeTapeDrive();
+                                drive.position.x = -x + c.x;
+                                drive.position.z = -z + c.y;
+                                building.add(drive);
+                            }
+                        }
+                    }
+                }
+            });
+
+            
             
         } else if(nearest > REPAIRSHOP_DIST) {
             color = REPAIR_COLORS[0];
@@ -489,7 +532,7 @@ function makeWorld() {
             
             var mainframe = makeMainframe();
             var c = computerRoom.center();
-            mainframe.position.set(c.x, 0, c.y);
+            mainframe.position.set(c.x, 0, computerRoom.min.y + 5/2);
             building.add(mainframe);
             obstacleNodes.push(mainframe);
             terminals.push({
@@ -521,6 +564,23 @@ function makeWorld() {
                     right.rotation.y = Math.PI/2;
                     building.add(right);
                     obstacleNodes.push(right);
+                    
+                    var s = bound.size();
+                    if(s.y > 40) {
+                        for(var x = 0; x < s.x/2 - 10; x+= 40) {
+                            var tapeDrive = makeTapeDrive();
+                            tapeDrive.position.x = x+c.x;
+                            tapeDrive.position.z = bound.min.y+5/2 + 10;
+                            building.add(tapeDrive);
+                            if(x!= 0) {
+                                var tapeDrive = makeTapeDrive();
+                                tapeDrive.position.x = -x+c.x;
+                                tapeDrive.position.z = bound.min.y+5/2 + 10;
+                                building.add(tapeDrive);
+                            }
+                        }
+                    }
+
                 }
             });
             
@@ -768,50 +828,36 @@ function makeWorld() {
                 obstacleNodes.push(leftWall);
             }
             var LIGHT_SPACING = 40;
-            var places = [];
-            for(var x = 0; x < area.size.x/2 - 5; x+= LIGHT_SPACING) {
-                for(var z = 0; z < area.size.y/2 - 5; z+= LIGHT_SPACING) {
+            var MARGIN = 5;
+            for(var x = 0; x < area.size.x/2 - MARGIN; x+= LIGHT_SPACING) {
+                for(var z = 0; z < area.size.y/2 - MARGIN; z+= LIGHT_SPACING) {
                     var light = makeCeilingLight();
                     light.position.y = height;
                     light.position.x = x;
                     light.position.z = z;
                     room.add(light);
-                    places.push([x,z]);
-                    if(x!= 0 || z != 0) {
+                    if(x!= 0) {
                         var light = makeCeilingLight();
                         light.position.y = height;
                         light.position.x = -x;
                         light.position.z = z;
                         room.add(light);
-                        places.push([-x,z]);
-                        
+                    }
+                    if(z != 0) {
                         var light = makeCeilingLight();
                         light.position.y = height;
                         light.position.x = x;
                         light.position.z = -z;
                         room.add(light);
-                        places.push([x,-z]);
-                    
+                    }
+                    if(x != 0 && z != 0) {
                         var light = makeCeilingLight();
                         light.position.y = height;
                         light.position.x = -x;
                         light.position.z = -z;
                         room.add(light);
-                        places.push([-x,-z]);
                     }
                 }
-            }
-            if(area.size.x > 40 && area.size.y > 40) {
-                places.forEach(function(place){
-                    var table = makeTable();
-                    table.position.x = place[0];
-                    table.position.z = place[1];
-                    room.add(table);
-                    obstacleNodes.push(table);
-                    var desktop = makeDesktop();
-                    desktop.position.y = table.userData.top;
-                    table.add(desktop);
-                });
             }
         });
         
@@ -1056,17 +1102,17 @@ function makeWorld() {
         var root = new THREE.Object3D();
         var bottom = 0;
         
-        var base = makeBox(5,10,5, 0xff0000, 0x888888);
+        var base = makeBox(5,10,5, DANGER_COLORS[0], DANGER_COLORS[1]);
         pointify(base.children[0].geometry, 10, 0.5, 0.5);
         root.add(base);
         bottom += 10;
         
-        var head = makeBox(5,3,5, 0xff0000, 0x880000);
+        var head = makeBox(5,3,5, DANGER_COLORS[0], DANGER_COLORS[1]);
         head.position.y = bottom;
         root.add(head);
         bottom += 3;
         
-        var gun = makeBox(1,1,3, 0xff0000, 0x444444);
+        var gun = makeBox(1,1,3, DANGER_COLORS[0], DANGER_COLORS[1]);
         head.add(gun);
         gun.position.z = -5/2 - 3/2;
         gun.position.y = 1;
@@ -1188,8 +1234,8 @@ function makeWorld() {
         return {body:root, eye:camera};
     }
 
-    //var startPos = new THREE.Vector3(0,0,0);
-    //startRoom.localToWorld(startPos);
+    var startPos = new THREE.Vector3(0,0,0);
+    startRoom.localToWorld(startPos);
     (function(){
         var shape = (function() {
             var root= new THREE.Object3D();

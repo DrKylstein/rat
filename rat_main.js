@@ -815,7 +815,7 @@ function update(time) {
                     
                     doShotSound();
                     
-                    var beam = makeBox(0.5, 0.5, 5, 0xffff00, 0xffff00);
+                    var beam = makeBox(0.5, 0.5, 5, DANGER_COLORS[0], DANGER_COLORS[0]);
                     beam.position.set(0,0,-3);
                     shooter.gun.localToWorld(beam.position)
                     
@@ -831,7 +831,7 @@ function update(time) {
                     velocity.multiplyScalar(150);
                     
                     var light = getLight();
-                    light.body.color.setHex(0xffff00);
+                    light.body.color.setHex(DANGER_COLORS[0]);
                     light.body.intensity = 0.5;
                     light.body.distance = 10;
                     light.owner = beam.id;
