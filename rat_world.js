@@ -18,6 +18,7 @@ function makeWorld() {
     var shooters = [];
     var lookers = [];
     var healers = [];
+    var masterComputer;
         
     var NAMES = [
     'Rodriguez',
@@ -464,6 +465,7 @@ function makeWorld() {
             mainframe.position.set(c.x, 0, computerRoom.min.y + 5/2);
             building.add(mainframe);
             obstacleNodes.push(mainframe);
+            masterComputer = mainframe.id;
             terminals.push({
                 id:mainframe.id,
                 body:mainframe, 
@@ -1566,6 +1568,7 @@ function makeWorld() {
         indoors:indoors,
         shooters:shooters,
         lookers:lookers,
-        healers:healers
+        healers:healers,
+        masterComputer:masterComputer
     };
 }

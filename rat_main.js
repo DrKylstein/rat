@@ -558,13 +558,12 @@ function handleBotSaveDelete(index) {
             case 1:
                 if(host.contents.length < 4) {
                     host.contents.push(client.contents[index]);
-                    
                     var found = [false,false,false];
                     host.contents.forEach(function(prg){
                         var id = world.mcp.indexOf(prg);
                         if(id != -1) found[id] = true;
                     });
-                    if(found.every(function(a){return a})) {
+                    if(found.every(function(a){return a}) && host.id == world.masterComputer) {
                         interfaceAction = null;
                         monitor.clear();
                         monitor.println('Computer control restored.');
