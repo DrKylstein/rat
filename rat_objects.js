@@ -13,22 +13,26 @@ function Monitor(color, backColor) {
     var cy;
     
     this.clear = function() {
+        monitor.globalCompositeOperation = 'source-over';
         monitor.fillStyle= new THREE.Color(backColor).getStyle();
+        monitor.fillRect(0,0, monitorCanvas.width,monitorCanvas.height);
+        monitor.fillStyle = new THREE.Color(color).getStyle();
+        monitor.globalCompositeOperation = 'darken';
         monitor.fillRect(0,0, monitorCanvas.width,monitorCanvas.height);
         cy = 0;
         monitorTex.needsUpdate = true;
     }
     this.println = function(text) {
+        monitor.globalCompositeOperation = 'source-over';
         text = text.toUpperCase();
         for(var i = 0; i < text.length; i++) {
             var index = text.charCodeAt(i)-32;
             monitor.drawImage(font, (index%16)*8,Math.floor(index/16)*16, 8,16,  i*8,cy*16, 8,16);
         }
-
-        /*monitor.fillStyle= new THREE.Color(color).getStyle();
-        monitor.font ='bold 16px monospace';
-        monitor.fillText(text.toUpperCase(), 8,8+cy*16);*/
         ++cy;
+        monitor.globalCompositeOperation = 'darken';
+        monitor.fillStyle = new THREE.Color(color).getStyle();
+        monitor.fillRect(0,0, monitorCanvas.width,monitorCanvas.height);
         monitorTex.needsUpdate = true;
     }
     
