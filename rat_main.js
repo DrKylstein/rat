@@ -608,7 +608,7 @@ function getLight() {
     return oldest;
 }
 
-getLookVector = function() {
+var getLookVector = function() {
     // assumes the camera itself is not rotated
     var direction = new THREE.Vector3( 0, 0, -1 );
     return function(obj, v) {
@@ -795,13 +795,17 @@ function update(time) {
         var targetPos = bot.body.position.clone();
         targetPos.y += 5;
         world.shooters.forEach(function(shooter){
+            v.copy(targetPos);
+            shooter.ref.worldToLocal(v);
+            var inBox = shooter.killBox.containsPoint(v);
+            
             shooter.cooldown = Math.max(shooter.cooldown - delta, 0);
             v.copy(targetPos);
             shooter.gun.parent.worldToLocal(v);
             getLookVector(shooter.gun, v2);
             v.normalize();
             v2.normalize();
-            if(v.dot(v2) > 0.8 && shooter.killBox.containsPoint(bot.body.position)) {
+            if(v.dot(v2) > 0.8 && inBox) {
                 if(shooter.cooldown <= 0) {
                     
                     doShotSound();

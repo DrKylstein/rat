@@ -18,12 +18,7 @@ function makeWorld() {
     var shooters = [];
     var lookers = [];
     var healers = [];
-    
-    //~ var gridTex = new THREE.ImageUtils.loadTexture("rat_grid.png");
-    //~ gridTex.wrapS = THREE.RepeatWrapping; 
-    //~ gridTex.wrapT = THREE.RepeatWrapping;
-    //~ gridTex.anisotropy = 8;
-    
+        
     var NAMES = [
     'Rodriguez',
     'Garcia',
@@ -493,6 +488,28 @@ function makeWorld() {
                 locked:true,
                 hasScreen:true,
                 readOnly: 1
+            });
+            
+            bounds.forEach(function(bound) {
+                if(Math.abs(bound.min.y - computerRoom.max.y) < wD*2) {
+                    var killBox = new THREE.Box3(
+                        new THREE.Vector3(bound.min.x, 0, bound.min.y),
+                        new THREE.Vector3(bound.max.x, 20, bound.max.y)
+                    );
+                    var c = bound.center();
+                    var left = spawnTurret(killBox, building);
+                    left.position.x = bound.min.x + 5/2;
+                    left.position.z = c.y;
+                    left.rotation.y = -Math.PI/2;
+                    building.add(left);
+                    obstacleNodes.push(left);
+                    var right = spawnTurret(killBox, building);
+                    right.position.x = bound.max.x - 5/2;
+                    right.position.z = c.y;
+                    right.rotation.y = Math.PI/2;
+                    building.add(right);
+                    obstacleNodes.push(right);
+                }
             });
             
         } else {
@@ -980,7 +997,7 @@ function makeWorld() {
     map.scale.set(1/Math.max(cityWidth+2000, cityDepth+2000), 1/Math.max(cityWidth+2000, cityDepth+2000), 1);
     
     
-    function spawnTurret(killBox) {
+    function spawnTurret(killBox, ref) {
         var root = new THREE.Object3D();
         var bottom = 0;
         
@@ -1000,7 +1017,7 @@ function makeWorld() {
         gun.position.y = 1;
         
         
-        shooters.push({id:head.id, gun:head, cooldown:0, killBox:killBox, direction:1});
+        shooters.push({id:head.id, gun:head, cooldown:0, killBox:killBox, direction:1, ref:ref});
         damageable.push({id:head.id, damage:0, body:head});
         
         return root;
