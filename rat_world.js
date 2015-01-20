@@ -133,7 +133,7 @@ function makeWorld() {
     var map = new THREE.Object3D();
     map.rotation.x = Math.PI;
         
-    var REPAIRSHOP_DIST = 1000;
+    var REPAIRSHOP_DIST = 700;
     
     var wD = 2;
     var xBlocks = 3;
@@ -391,7 +391,7 @@ function makeWorld() {
             
             var mainframe = makeMainframe();
             var c = computerRoom.center();
-            mainframe.position.set(c.x, 0, computerRoom.min.y + 5/2);
+            mainframe.position.set(c.x, 0, computerRoom.min.y+wD/2);
             building.add(mainframe);
             obstacleNodes.push(mainframe);
             masterComputer = mainframe.id;
@@ -455,20 +455,15 @@ function makeWorld() {
             
             
         } else if(nearest > REPAIRSHOP_DIST) {
-            color = REPAIR_COLORS[0];
-            var bounds = flattenDegenerateTree(subdivide(
-                new THREE.Vector2(-size.x/2,-size.z/2), 
-                new THREE.Vector2(size.x/2, size.z/2), 
-                20, 
-                false
-            )).map(function(corners) {return shrink(wD/2, corners);});
-            
+            color = REPAIR_COLORS[0];            
             building = makeBuilding(size.x, 30, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-            var station = makeRepairStation();
-            building.add(station.body);
-            lookers.push(station.head);
-            obstacleNodes.push(station.body);
-            healers.push(station.body);
+            var layout = makeInnerLayout([new THREE.Box2(new THREE.Vector2(-size.x/2,-size.z/2), new THREE.Vector2(size.x/2, size.z/2))], size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            building.add(layout);
+
+            var station = makeRepairStation(obstacleNodes);
+            station.position.z = -size.z/2 + wD/2;
+            building.add(station);
+            healers.push(station);
             
             repairShops.push(lot.space);
             name = Random.choose(NAMES.concat(BIG_ADJECTIVES)) + ' Robot Repair';
@@ -498,7 +493,7 @@ function makeWorld() {
             
             var mainframe = makeMainframe();
             var c = computerRoom.center();
-            mainframe.position.set(c.x, 0, computerRoom.min.y + 5/2);
+            mainframe.position.set(c.x, 0, computerRoom.min.y+wD/2);
             building.add(mainframe);
             obstacleNodes.push(mainframe);
             terminals.push({
@@ -519,13 +514,13 @@ function makeWorld() {
                     );
                     var c = bound.center();
                     var left = spawnTurret(killBox, building);
-                    left.position.x = bound.min.x + 5/2;
+                    left.position.x = bound.min.x + wD/2;
                     left.position.z = c.y;
                     left.rotation.y = -Math.PI/2;
                     building.add(left);
                     obstacleNodes.push(left);
                     var right = spawnTurret(killBox, building);
-                    right.position.x = bound.max.x - 5/2;
+                    right.position.x = bound.max.x - wD/2;
                     right.position.z = c.y;
                     right.rotation.y = Math.PI/2;
                     building.add(right);
@@ -536,12 +531,12 @@ function makeWorld() {
                         for(var x = 0; x < s.x/2 - 10; x+= 40) {
                             var tapeDrive = makeTapeDrive(spinners);
                             tapeDrive.position.x = x+c.x;
-                            tapeDrive.position.z = bound.min.y+5/2 + 10;
+                            tapeDrive.position.z = bound.min.y + 10;
                             building.add(tapeDrive);
                             if(x!= 0) {
                                 var tapeDrive = makeTapeDrive(spinners);
                                 tapeDrive.position.x = -x+c.x;
-                                tapeDrive.position.z = bound.min.y+5/2 + 10;
+                                tapeDrive.position.z = bound.min.y + 10;
                                 building.add(tapeDrive);
                             }
                         }
@@ -1087,81 +1082,13 @@ function makeWorld() {
         shooters.push({id:head.id, gun:head, cooldown:0, killBox:killBox, direction:1, ref:ref});
         damageable.push({id:head.id, damage:0, body:head});
         
-        return root;
+        var whole = new THREE.Object3D();
+        root.position.z = -5/2;
+        whole.add(root);
+        
+        return whole;
     }
     
-    /*Random.shuffle(buildings);
-    buildings.sort(function(a,b){return b.height - a.height;});
-        
-    var startRoom;
-    programs.forEach(function(program, i) {
-        var building = buildings[i%buildings.length];
-        while(building.leafRooms.length == 0) {
-            i++;
-            building = buildings[i%buildings.length]
-        }
-        var room = Random.choose(building.leafRooms);
-        building.rooms.splice(building.rooms.indexOf(room),1);
-        building.leafRooms.splice(building.leafRooms.indexOf(room),1);
-        
-        if(i == 0) {
-            startRoom = Random.choose(building.rooms.filter(function(r2){
-                return r2.id != room.id;
-            }));
-            building.rooms.splice(building.rooms.indexOf(startRoom), 1);
-            building.leafRooms.splice(building.leafRooms.indexOf(startRoom), 1);
-        } else {
-            var mainframe = makeMainframe();
-            var back = room.userData.size.z/2 - 5;
-            mainframe.position.z -= back;
-            room.add(mainframe);
-            obstacles.push(new THREE.Box3().setFromObject(mainframe));
-            terminals.push({
-                id:mainframe.id,
-                body:mainframe, 
-                name:"Cyber "+(i+1), 
-                contents:[program], 
-                locked:i>0,
-                hasScreen:true,
-                readOnly: 1
-            });
-            
-            room = Random.choose(building.rooms);
-            if(i < 3) {
-                var left = spawnTurret(room.userData.bounds);
-                left.position.x = -room.userData.size.x/2 + 5/2;
-                left.rotation.y = -Math.PI/2;
-                room.add(left);
-                obstacles.push(new THREE.Box3().setFromObject(left));
-            }
-            var right = spawnTurret(room.userData.bounds);
-            right.position.x = +room.userData.size.x/2 - 5/2;
-            right.rotation.y = Math.PI/2;
-            room.add(right);
-            obstacles.push(new THREE.Box3().setFromObject(right));
-        }
-    });
-
-    buildings.forEach(function(building){
-        building.leafRooms.forEach(function(room){
-            if(room.userData.size.x >= 20 && room.userData.size.z >= 20) {
-                var table = makeTable();
-                table.position.z = -room.userData.size.z/2 + 10/2;
-                room.add(table);
-                obstacles.push(new THREE.Box3().setFromObject(table));
-            }
-            building.rooms.splice(building.rooms.indexOf(room),1);
-        });
-        building.rooms.forEach(function(room){
-            if(room.userData.size.x >= 40 && room.userData.size.z >= 30) {
-                var table = makeTable();
-                room.add(table);
-                obstacles.push(new THREE.Box3().setFromObject(table));
-            }
-        });
-    });*/
-
-
     function makeMarker() {
         var box = makeBox(50,50,1,SCREEN_COLORS[0],SCREEN_COLORS[0]);
         box.children[0].position.y = 0;

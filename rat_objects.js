@@ -100,7 +100,11 @@ function makeMainframe() {
     top.position.y = bottom;
     root.add(top);
     
-    return root;
+    var whole = new THREE.Object3D();
+    root.position.z = 5/2 + 2;
+    whole.add(root);
+    
+    return whole;
 }
 
 function makeTable() {
@@ -144,43 +148,44 @@ function makeCeilingLight() {
     return root;
 }
 
-function makeRepairStation() {
+function makeRepairStation(obstacleNodes) {
     var root = new THREE.Object3D();
-    var top = 0;
+    var base = makeBox(10,2,8, REPAIR_COLORS[0], REPAIR_COLORS[1]);
+    root.add(base);
     
-    var torso = makeBox(6,9,6, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-    torso.rotation.y = Math.PI/4;
-    pointify(torso.children[0].geometry, 9, 0.5, 0.5);
-    root.add(torso);
-    top += 9;
+    var bottom = 2;
     
-    var head = makeBox(7,4,7, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-    head.children[0].rotation.x = Math.PI;
-    pointify(head.children[0].geometry, 4, 0.5, 0.5);
-    head.position.y = top;
-    top += 4;
-    root.add(head);
+    var mid = makeBox(10,15,2,REPAIR_COLORS[0], REPAIR_COLORS[1]);
+    mid.position.y = bottom;
+    mid.position.z = 2/2 - 8/2;
+    root.add(mid);
+    bottom += 15;
     
-    var eye = makeBox(1,1,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-    eye.position.y = 1;
-    eye.position.z = 3;
-    eye.position.x = -1;
-    head.add(eye);
+    var greeble = makeBox(3, 2, 0.25, REPAIR_COLORS[0], REPAIR_COLORS[1]);
+    greeble.position.z = 2/2 + 0.25/2;
+    greeble.position.y = 7;
+    greeble.position.x = 3;
+    mid.add(greeble);
+    
+    var greeble = makeBox(3, 2, 0.25, REPAIR_COLORS[0], REPAIR_COLORS[1]);
+    greeble.position.z = 2/2 + 0.25/2;
+    greeble.position.y = 7;
+    greeble.position.x = -3;
+    mid.add(greeble);
 
-    var eye = makeBox(1,1,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-    eye.position.y = 1;
-    eye.position.z = 3;
-    eye.position.x = 1;
-    head.add(eye);
-
-
-    var light = makeBox(1.5,1.5,1, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-    light.position.y = 2.25;
-    light.position.z = 3;
-    head.add(light);
     
+    var top = makeBox(10,2,8,REPAIR_COLORS[0], REPAIR_COLORS[1]);
+    top.position.y = bottom;
+    root.add(top);
     
-    return {body:root, head:head};
+    root.position.z = 8/2 + 2;
+    var whole = new THREE.Object3D();
+    whole.add(root);
+    
+    obstacleNodes.push(base);
+    obstacleNodes.push(mid)
+    
+    return whole;
 }
 
 function makeDesktop() {
@@ -240,5 +245,9 @@ function makeTapeDrive(spinners) {
     top.position.y = bottom;
     root.add(top);
     
-    return root;
+    var whole = new THREE.Object3D();
+    root.position.z = 5/2 + 1;
+    whole.add(root);
+    
+    return whole;
 }
