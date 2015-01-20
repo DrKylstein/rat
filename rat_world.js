@@ -1132,10 +1132,10 @@ function makeWorld() {
     (function(){
         var shape = (function() {
             var root= new THREE.Object3D();
-            var body = makeBox(9,5,9, 0x0000ff, 0x000088);
+            var body = makeBox(9,5,9, GOOD_COLORS[0], GOOD_COLORS[1]);
             pointify(body.children[0].geometry, 5, 1,1);
             root.add(body);
-            var eye = makeBox(2,1,1, 0xff0000, 0xffff00);
+            var eye = makeBox(2,1,1, SCREEN_COLORS[0], SCREEN_COLORS[1]);
             eye.position.y = 2;
             eye.position.z = -2;
             root.add(eye);
@@ -1166,7 +1166,6 @@ function makeWorld() {
             id:id,
             body:shape.body, 
             eye:shape.eye, 
-            radius:3, //used for shooting, should move
             speed:400.0,
             vspeed:0.0,
             spawn: intersections[sx][sz],
@@ -1207,9 +1206,9 @@ function makeWorld() {
             var body = new THREE.Object3D();
             var eye = new THREE.Object3D();
             
-            var top = makeBox(5,5,5, 0xff0000,0xffff00);
+            var top = makeBox(5,5,5, GOOD_COLORS[0], GOOD_COLORS[1]);
             pointify(top.children[0].geometry, 5, 1, 1);
-            var bottom = makeBox(5,5,5, 0xff0000,0xffff00);
+            var bottom = makeBox(5,5,5, GOOD_COLORS[0], GOOD_COLORS[1]);
             pointify(bottom.children[0].geometry, 5, 1, 1);
             bottom.rotation.x = Math.PI;
             top.position.y = 5;
@@ -1222,7 +1221,7 @@ function makeWorld() {
             
             for(var i = 0; i < 4; i++) {
                 var root = new THREE.Object3D();
-                var rotor = makeBox(10,1,5, 0xff0000,0xffff00);
+                var rotor = makeBox(10,1,5, GOOD_COLORS[0], GOOD_COLORS[1]);
                 rotor.position.x = 12;
                 root.rotation.y = Math.PI*i/2;
                 root.add(rotor);
@@ -1305,11 +1304,11 @@ function makeWorld() {
     (function(){
         var shape = (function makeIgor() {
             var root = new THREE.Object3D();
-            var base = makeBox(4,2,4, 0x0000ff, 0x000088);
-            var torso = makeBox(8,7,6, 0x0000ff, 0x000088);
-            var head = makeBox(7,4,7, 0x0000ff, 0x000088);
+            var base = makeBox(4,2,4, GOOD_COLORS[0], GOOD_COLORS[1]);
+            var torso = makeBox(8,7,6, GOOD_COLORS[0], GOOD_COLORS[1]);
+            var head = makeBox(7,4,7, GOOD_COLORS[0], GOOD_COLORS[1]);
             head.rotation.y = Math.PI/4;
-            var eye = makeBox(2,1,1, 0x00ff00, 0x002200);
+            var eye = makeBox(2,1,1, SCREEN_COLORS[0], SCREEN_COLORS[1]);
             var camera = new THREE.Object3D();
             
             pointify(torso.children[0].geometry, 9, 0.5, 0.25);
