@@ -466,7 +466,7 @@ function setBot(fn) {
     bot = world.bots[fn];
     client = findById(world.terminals, bot.id).obj;
     bot.body.visible = false;
-    controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
+    controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed, bot.angSpeed);
     updateRampaks();
     botIndicator.position.x = fn*0.25 - 0.5 + 0.25/2;
 }
@@ -803,6 +803,8 @@ function update(time) {
                 v.y += 5;
                 shooter.gun.parent.worldToLocal(v);
                 getLookVector(shooter.gun, v2);
+                v.y = 0;
+                v2.y = 0;
                 v.normalize();
                 v2.normalize();
                 var inCone = v.dot(v2) > 0.99;
@@ -847,11 +849,10 @@ function update(time) {
                     shooter.cooldown = 0.25;
                 }
             } else {
-                shooter.gun.rotation.y = shooter.gun.rotation.y + 
-                    Math.PI*delta*shooter.direction/4;
-                if(shooter.gun.rotation.y > Math.PI/2) {
+                shooter.gun.rotation.y += Math.PI*delta*shooter.direction*0.5;
+                if(shooter.gun.rotation.y > Math.PI/4) {
                    shooter.direction = -1;
-                } else if(shooter.gun.rotation.y < -Math.PI/2) {
+                } else if(shooter.gun.rotation.y < -Math.PI/4) {
                     shooter.direction = 1;
                 }
             }
