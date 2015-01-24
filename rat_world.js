@@ -216,10 +216,10 @@ function makeWorld() {
     }
     
     var intersections = {};
-    for(var z = 0; z <= zBlocks; z++) {
-        intersections[z] = {};
-        for(var x = 0; x <= xBlocks; x++) {
-            intersections[z][x] = (new THREE.Vector3(x*blockWidth + roadSize/2, 0.0, z*blockDepth + alleySize/2));
+    for(var x = 0; x <= xBlocks; x++) {
+        intersections[x] = {};
+        for(var z = 0; z <= zBlocks; z++) {
+            intersections[x][z] = (new THREE.Vector3(x*blockWidth + roadSize/2, 0.0, z*blockDepth + alleySize/2));
             /*var marker = makeMarker();
             marker.position.set(intersections[z][x].x, intersections[z][x].z, 1);
             map.add(marker);*/
@@ -295,7 +295,7 @@ function makeWorld() {
                     if(lz == 0) side.push(Math.PI);
                     if(lz == zLots - 1) side.push(0);
 
-                    lots.push({space:lot, facings:side});
+                    lots.push({space:lot, facings:side, bx:bx, bz:bz});
                 }
             }
         }
@@ -349,6 +349,7 @@ function makeWorld() {
     ];
         
     var startRoom = null;
+    var startBlock = null;
         
     lots.forEach(function(lot){
         var size = lot.space.size();
@@ -408,6 +409,8 @@ function makeWorld() {
             startRoom = new THREE.Object3D();
             startRoom.position.set(c.x, 0, c.y);
             building.add(startRoom);
+            
+            startBlock = [lot.bx, lot.bz];
             
             var SPACING = 20;
             var MARGIN = 10;
@@ -1148,11 +1151,8 @@ function makeWorld() {
         
         var id = shape.body.id;
         var nick = 'Jerry';
-        
-        var sx = Random.integer(0,xBlocks-1);
-        var sz = Random.integer(0,zBlocks-1);
-        
-        shape.body.position.copy(intersections[sx][sz]);
+                
+        shape.body.position.copy(intersections[startBlock[0]][startBlock[1]]);
         world.add(shape.body);
         terminals.push({
             id:id,
@@ -1169,7 +1169,7 @@ function makeWorld() {
             speed:200.0,
             vspeed:0.0,
             angSpeed:5.0,
-            spawn: intersections[sx][sz],
+            spawn: intersections[startBlock[0]][startBlock[1]],
             name:'RAT',
             nick:nick,
             resetOwner:true
@@ -1188,15 +1188,15 @@ function makeWorld() {
             body:shape.body, 
             face:true,
             path:[
-                intersections[sx][sz],
-                intersections[sx+1][sz],
-                intersections[sx+1][sz+1],
-                intersections[sx][sz+1]
+                intersections[startBlock[0]][startBlock[1]],
+                intersections[startBlock[0]+1][startBlock[1]],
+                intersections[startBlock[0]+1][startBlock[1]+1],
+                intersections[startBlock[0]][startBlock[1]+1]
             ],
             index:0,
             speed:40,
             device:bot
-        })
+        });
         
         botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
         
@@ -1241,7 +1241,7 @@ function makeWorld() {
         var sx = Random.integer(0,xBlocks-1);
         var sz = Random.integer(0,zBlocks-1);
 
-        shape.body.position.y = 10;
+        shape.body.position.y = 100;
         shape.body.position.add(intersections[sx][sz]);
         world.add(shape.body);
         var nick = 'Amelia';
@@ -1265,6 +1265,10 @@ function makeWorld() {
             name:'Flying Eye',
             nick:nick
         });
+        
+        var high = 100;
+        var low = 20;
+        
         pathers.push({
             id:id,
             body:shape.body,
@@ -1273,21 +1277,21 @@ function makeWorld() {
             index:0,
             device:bot,
             path:[
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz]),
-                intersections[sx][sz],
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz]),
+                new THREE.Vector3(0.0,low,0.0).add(intersections[sx][sz]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz]),
             
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz+1]),
-                intersections[sx][sz+1],
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx][sz+1]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz+1]),
+                new THREE.Vector3(0.0,low,0.0).add(intersections[sx][sz+1]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz+1]),
             
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz+1]),
-                intersections[sx+1][sz+1],
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz+1]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz+1]),
+                new THREE.Vector3(0.0,low,0.0).add(intersections[sx+1][sz+1]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz+1]),
                 
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz]),
-                intersections[sx+1][sz],
-                new THREE.Vector3(0.0,100.0,0.0).add(intersections[sx+1][sz])
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz]),
+                new THREE.Vector3(0.0,low,0.0).add(intersections[sx+1][sz]),
+                new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz])
             ]
         });
         damageable.push({id:id, body:shape.body, damage:0});
