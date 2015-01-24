@@ -198,6 +198,7 @@ canvas.onclick = function() {
         canvas.requestPointerLock();
     }
 }
+canvas.ontouchstart = canvas.onclick;
 
 if ("onpointerlockchange" in document) {
   document.addEventListener('pointerlockchange', lockChangeAlert, false);
