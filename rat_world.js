@@ -1259,7 +1259,7 @@ function makeWorld() {
             eye:shape.eye,
             speed:200.0,
             vspeed:200.0,
-            angSpeed:5.0,
+            angSpeed:2.5,
             spawn: shape.body.position.clone(),
             resetOwner: true,
             name:'Flying Eye',
@@ -1267,12 +1267,12 @@ function makeWorld() {
         });
         
         var high = 100;
-        var low = 20;
+        var low = 0;
         
         pathers.push({
             id:id,
             body:shape.body,
-            speed:30,
+            speed:10,
             face:false,
             index:0,
             device:bot,
