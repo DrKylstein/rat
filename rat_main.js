@@ -198,13 +198,7 @@ canvas.onclick = function() {
         canvas.requestPointerLock();
     }
 }
-var touchPos;
-canvas.addEventListener("touchstart", function(event){
-    controls.enabled = true;
-    pauseMessage.visible = false;
-    compass.visible = true;
-    touchPos = [event.changeTouches[0].clientX, event.changeTouches[0].clientY];
-});
+canvas.ontouchstart = canvas.onclick;
 
 if ("onpointerlockchange" in document) {
   document.addEventListener('pointerlockchange', lockChangeAlert, false);
