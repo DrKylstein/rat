@@ -847,11 +847,10 @@ function update(time) {
                     shooter.cooldown = 0.25;
                 }
             } else {
-                shooter.gun.rotation.y = shooter.gun.rotation.y + 
-                    Math.PI*delta*shooter.direction/4;
-                if(shooter.gun.rotation.y > Math.PI/2) {
+                shooter.gun.rotation.y += Math.PI*delta*shooter.direction*0.5;
+                if(shooter.gun.rotation.y > Math.PI/4) {
                    shooter.direction = -1;
-                } else if(shooter.gun.rotation.y < -Math.PI/2) {
+                } else if(shooter.gun.rotation.y < -Math.PI/4) {
                     shooter.direction = 1;
                 }
             }
