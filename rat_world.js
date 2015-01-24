@@ -1166,8 +1166,9 @@ function makeWorld() {
             id:id,
             body:shape.body, 
             eye:shape.eye, 
-            speed:400.0,
+            speed:200.0,
             vspeed:0.0,
+            angSpeed:5.0,
             spawn: intersections[sx][sz],
             name:'RAT',
             nick:nick,
@@ -1193,7 +1194,7 @@ function makeWorld() {
                 intersections[sx][sz+1]
             ],
             index:0,
-            speed:20,
+            speed:40,
             device:bot
         })
         
@@ -1256,8 +1257,9 @@ function makeWorld() {
             id:id,
             body:shape.body, 
             eye:shape.eye,
-            speed:400.0,
-            vspeed:400.0,
+            speed:200.0,
+            vspeed:200.0,
+            angSpeed:5.0,
             spawn: shape.body.position.clone(),
             resetOwner: true,
             name:'Flying Eye',
@@ -1344,8 +1346,9 @@ function makeWorld() {
             body:shape.body,
             eye:shape.eye,
             hacker:true,
-            speed:300.0,
+            speed:75.0,
             vspeed:0.0,
+            angSpeed:2.5,
             spawn:startPos,//intersections[sx][sz],
             //resetOwner: true,
             name:'Hacker',

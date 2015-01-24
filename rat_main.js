@@ -466,7 +466,7 @@ function setBot(fn) {
     bot = world.bots[fn];
     client = findById(world.terminals, bot.id).obj;
     bot.body.visible = false;
-    controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed);
+    controls.attach(bot.body, bot.eye, bot.speed, bot.vspeed, bot.angSpeed);
     updateRampaks();
     botIndicator.position.x = fn*0.25 - 0.5 + 0.25/2;
 }

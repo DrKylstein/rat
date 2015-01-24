@@ -6,16 +6,18 @@ THREE.PointerLockControls = function (camera, body, eye) {
 
 	var scope = this;
 
+	var DECEL = 5.0;
+	var A_DECEL = 5.0;
 	
-	
-	var yawObject, pitchObject, speed, vspeed;
-	this.attach = function(body, eye, sp, vs) {
+	var yawObject, pitchObject, speed, vspeed, angSpeed;
+	this.attach = function(body, eye, sp, vs, as) {
 		yawObject = body;
 		pitchObject = eye;
 		pitchObject.add(camera);
 		camera.rotation.set( 0, 0, 0 );
 		speed = sp;
 		vspeed = vs;
+		angSpeed = (as || 10);
 	}
 	
 	this.attach(body, eye);
@@ -29,6 +31,8 @@ THREE.PointerLockControls = function (camera, body, eye) {
 	var moveDown = false;
 	
 	this.velocity = new THREE.Vector3();
+	
+	this.angVelocity = new THREE.Vector2();
 
 	var PI_2 = Math.PI / 2;
 
@@ -39,10 +43,13 @@ THREE.PointerLockControls = function (camera, body, eye) {
 		var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
 		var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-		yawObject.rotation.y -= movementX * 0.002;
-		pitchObject.rotation.x -= movementY * 0.002;
+		scope.angVelocity.x -= movementX * 0.002;
+		scope.angVelocity.y -= movementY * 0.002;
+		
+		//yawObject.rotation.y -= movementX * 0.002;
+		//pitchObject.rotation.x -= movementY * 0.002;
 
-		pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+		//pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
 
 	};
 
@@ -178,9 +185,17 @@ THREE.PointerLockControls = function (camera, body, eye) {
 	this.update = function (delta) {
 		if ( scope.enabled === false ) return;
 
-		this.velocity.x -= this.velocity.x * 10.0 * delta;
-		this.velocity.z -= this.velocity.z * 10.0 * delta;
-		this.velocity.y -= this.velocity.y * 10.0 * delta;
+		yawObject.rotation.y += this.angVelocity.x * angSpeed * delta;
+		pitchObject.rotation.x += this.angVelocity.y * angSpeed * delta;
+
+		pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+
+		this.angVelocity.x -= this.angVelocity.x * A_DECEL * delta;
+		this.angVelocity.y -= this.angVelocity.y * A_DECEL * delta;
+		
+		this.velocity.x -= this.velocity.x * DECEL * delta;
+		this.velocity.z -= this.velocity.z * DECEL * delta;
+		this.velocity.y -= this.velocity.y * DECEL * delta;
 		
 		if ( moveForward) this.velocity.z -= speed * delta;
 		if ( moveBackward) this.velocity.z += speed * delta;
@@ -192,6 +207,7 @@ THREE.PointerLockControls = function (camera, body, eye) {
 		yawObject.translateX( this.velocity.x * delta );
 		yawObject.translateY( this.velocity.y * delta ); 
 		yawObject.translateZ( this.velocity.z * delta );
+		
 	};
 
 };
