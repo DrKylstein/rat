@@ -803,6 +803,8 @@ function update(time) {
                 v.y += 5;
                 shooter.gun.parent.worldToLocal(v);
                 getLookVector(shooter.gun, v2);
+                v.y = 0;
+                v2.y = 0;
                 v.normalize();
                 v2.normalize();
                 var inCone = v.dot(v2) > 0.99;
