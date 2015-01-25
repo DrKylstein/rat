@@ -6,8 +6,7 @@ var master = audioCtx.createGain();
 master.gain.value = 0.5;
 master.connect(audioCtx.destination);
 
-
-function doShotSound() {
+var shotSound = new (function () {
     var factor = 0.5;
     var cAttack = 0.1;
     var cRelease = 0.5;
@@ -25,7 +24,14 @@ function doShotSound() {
     modulator.connect(mGain);
     mGain.connect(carrier.detune);
     carrier.connect(cGain);
-    cGain.connect(master);
+    
+    var panner = audioCtx.createPanner();
+    panner.connect(master);
+    //panner.rolloffFactor = 1.0;
+    panner.refDistance = 10;
+    panner.maxDistance = 100;
+    
+    cGain.connect(panner);
     carrier.type = 'sine';
     modulator.type = 'sine';
 
@@ -39,13 +45,23 @@ function doShotSound() {
     carrier.frequency.value = 330;
     modulator.frequency.value = carrier.frequency.value * factor;
     
-    cGain.gain.linearRampToValueAtTime(cSustain, audioCtx.currentTime + cAttack);
-    mGain.gain.linearRampToValueAtTime(depth, audioCtx.currentTime + mAttack);
+    this.play = function(pos) {
+        cGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        mGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        
+        cGain.gain.value = 0;
+        mGain.gain.value = 0;
+        
+        panner.setPosition(pos.x, pos.y, pos.z);
+        
+        cGain.gain.linearRampToValueAtTime(cSustain, audioCtx.currentTime + cAttack);
+        mGain.gain.linearRampToValueAtTime(depth, audioCtx.currentTime + mAttack);
 
-    cGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + cAttack + cHold + cRelease);
-    mGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + mAttack + mHold + mRelease);
-}
-
+        cGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + cAttack + cHold + cRelease);
+        mGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + mAttack + mHold + mRelease);
+    }
+    
+})();
 
 var bufferSize = 2 * audioCtx.sampleRate,
     noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate),
@@ -812,14 +828,14 @@ function update(time) {
             })) {
                 if(shooter.cooldown <= 0) {
                     
-                    doShotSound();
-                    
                     var beam = makeBox(0.5, 0.5, 5, DANGER_COLORS[0], DANGER_COLORS[0]);
                     beam.position.set(0,0,-3);
                     shooter.gun.localToWorld(beam.position)
                     
                     var start = shooter.gun.position.clone();
                     shooter.gun.parent.localToWorld(start);
+                    
+                    shotSound.play(start);
                     
                     beam.lookAt(start);
                     
