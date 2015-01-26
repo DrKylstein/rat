@@ -510,6 +510,7 @@ function makeWorld() {
             });
             
             bounds.forEach(function(bound) {
+                var s = bound.size();
                 if(Math.abs(bound.min.y - computerRoom.max.y) < wD*2) {
                     var killBox = new THREE.Box3(
                         new THREE.Vector3(bound.min.x, 0, bound.min.y),
@@ -529,8 +530,33 @@ function makeWorld() {
                     building.add(right);
                     obstacleNodes.push(right);
                     
-                    var s = bound.size();
                     if(s.y > 40) {
+                        var left = spawnTurret(killBox, building);
+                        left.position.x = bound.min.x + wD/2;
+                        left.position.z = bound.min.y + wD/2 + 5;
+                        left.rotation.y = -Math.PI/2;
+                        building.add(left);
+                        obstacleNodes.push(left);
+                        var right = spawnTurret(killBox, building);
+                        right.position.x = bound.max.x - wD/2;
+                        right.position.z = bound.min.y + wD/2 + 5;
+                        right.rotation.y = Math.PI/2;
+                        building.add(right);
+                        obstacleNodes.push(right);
+                        
+                        var left = spawnTurret(killBox, building);
+                        left.position.x = bound.min.x + wD/2;
+                        left.position.z = bound.max.y - wD/2 - 5;
+                        left.rotation.y = -Math.PI/2;
+                        building.add(left);
+                        obstacleNodes.push(left);
+                        var right = spawnTurret(killBox, building);
+                        right.position.x = bound.max.x - wD/2;
+                        right.position.z = bound.max.y - wD/2 - 5;
+                        right.rotation.y = Math.PI/2;
+                        building.add(right);
+                        obstacleNodes.push(right);
+
                         for(var x = 0; x < s.x/2 - 10; x+= 40) {
                             var tapeDrive = makeTapeDrive(spinners);
                             tapeDrive.position.x = x+c.x;
