@@ -798,7 +798,7 @@ function update(time) {
             
             if(pather.face) {
                 m.lookAt(pather.body.position, pather.path[pather.index], UP);
-                pather.body.rotation.setFromRotationMatrix(m);
+                pather.body.rotation.setFromRotationMatrix(m, 'YXZ');
             }
             
             v.multiplyScalar(pather.speed*delta);
