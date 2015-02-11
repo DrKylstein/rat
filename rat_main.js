@@ -805,17 +805,15 @@ function update(time) {
             pather.body.position.add(v);
         });
         
-        var targetPos = bot.body.position.clone();
-        targetPos.y += 5;
         world.shooters.forEach(function(shooter){
             shooter.cooldown = Math.max(shooter.cooldown - delta, 0);
             
-            if(world.bots.some(function(target) {
+            var targets = world.bots.filter(function(target) {
                 v.copy(target.body.position);
                 v.y += 5;
                 shooter.ref.worldToLocal(v);
                 var inBox = shooter.killBox.containsPoint(v);
-                v.copy(target.body.position);
+                /*v.copy(target.body.position);
                 v.y += 5;
                 shooter.gun.parent.worldToLocal(v);
                 getLookVector(shooter.gun, v2);
@@ -823,9 +821,25 @@ function update(time) {
                 v2.y = 0;
                 v.normalize();
                 v2.normalize();
-                var inCone = v.dot(v2) > 0.99;
-                return inCone && inBox;
-            })) {
+                var inCone = v.dot(v2) > 0.99;*/
+                return /*inCone &&*/ inBox;
+            }).sort(function(a,b) {
+                v.copy(a.body.position);
+                v2.copy(b.body.position);
+                shooter.gun.parent.worldToLocal(v);
+                shooter.gun.parent.worldToLocal(v2);
+                return v.lengthSq() - v2.lengthSq();
+            });
+            var target = null;
+            if(targets.length > 0) {
+                target = targets[0];
+                v.copy(target.body.position);
+                v.y += 10;
+                shooter.gun.parent.worldToLocal(v);
+                v.negate();
+                v.y *= -1;
+                shooter.gun.lookAt(v);
+
                 if(shooter.cooldown <= 0) {
                     
                     var beam = makeBox(0.5, 0.5, 5, DANGER_COLORS[0], DANGER_COLORS[0]);
@@ -863,13 +877,6 @@ function update(time) {
                     });
                     scene.add(beam);
                     shooter.cooldown = 0.25;
-                }
-            } else {
-                shooter.gun.rotation.y += Math.PI*delta*shooter.direction*0.5;
-                if(shooter.gun.rotation.y > Math.PI/4) {
-                   shooter.direction = -1;
-                } else if(shooter.gun.rotation.y < -Math.PI/4) {
-                    shooter.direction = 1;
                 }
             }
         });
