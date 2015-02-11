@@ -1031,7 +1031,7 @@ function update(time) {
             if(world.healers.some(function(healer) {
                 v.copy(item.body.position);
                 healer.worldToLocal(v);
-                return v.lengthSq() < 5*5;
+                return v.lengthSq() < 10*10;
             })) {
                 item.damage = Math.max(0, item.damage - 2*delta);
             }
