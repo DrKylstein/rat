@@ -136,7 +136,7 @@ function makeWorld() {
     var wD = 2;
     var xBlocks = 3;
     var zBlocks = 2;
-    var lotSize = 200;
+    var lotSize = 300;
     var roadSize = 100;
     var alleySize = 50;
     var sidewalkSize = 20;
@@ -276,14 +276,14 @@ function makeWorld() {
                 for(var lx = 0; lx < xLots; lx++) {
                     var lot = new THREE.Box3(
                         new THREE.Vector3(
-                            lx*lotSize + sidewalkSize, 
+                            lx*lotSize,// + sidewalkSize, 
                             3, 
-                            lz*lotSize + sidewalkSize
+                            lz*lotSize// + sidewalkSize
                         ), 
                         new THREE.Vector3(
-                            (lx+1)*lotSize - sidewalkSize, 
+                            (lx+1)*lotSize,// - sidewalkSize, 
                             103,
-                            (lz+1)*lotSize - sidewalkSize
+                            (lz+1)*lotSize// - sidewalkSize
                         )
                     );
                     lot.translate(block.position);
@@ -456,6 +456,10 @@ function makeWorld() {
         var size = lot.space.size();
         var center = lot.space.center();
         center.y = lot.space.min.y;
+        
+        size.x = Random.integer(size.x/2, size.x);
+        size.z = Random.integer(size.z/2, size.z);
+        
         var building;
         var color;
         var nearest = repairShops.length? repairShops[0].center().distanceTo(center) : Number.MAX_VALUE;
@@ -477,7 +481,7 @@ function makeWorld() {
 
             color = START_COLORS[0];
             
-            building = makeBuilding(size.x, 300, START_COLORS[0], START_COLORS[1]);
+            building = makeBuilding(size.x, 300, size.z, START_COLORS[0], START_COLORS[1]);
             
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
@@ -486,7 +490,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD*2, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
                         
             var backRooms = bounds.filter(isBackRoom);
@@ -700,8 +704,8 @@ function makeWorld() {
             
         } else if(nearest > REPAIRSHOP_DIST) {
             color = REPAIR_COLORS[0];            
-            building = makeBuilding(size.x, 30, REPAIR_COLORS[0], REPAIR_COLORS[1]);
-            var layout = makeInnerLayout([new THREE.Box2(new THREE.Vector2(-size.x/2,-size.z/2), new THREE.Vector2(size.x/2, size.z/2))], size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            building = makeBuilding(size.x, 30, size.z, REPAIR_COLORS[0], REPAIR_COLORS[1]);
+            var layout = makeInnerLayout([new THREE.Box2(new THREE.Vector2(-size.x/2,-size.z/2), new THREE.Vector2(size.x/2, size.z/2))], size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
 
             var station = makeRepairStation(obstacleNodes);
@@ -721,7 +725,7 @@ function makeWorld() {
 
             color = IMPORTANT_COLORS[0];
             
-            building = makeBuilding(size.x, height, color, IMPORTANT_COLORS[1]);
+            building = makeBuilding(size.x, height, size.z, color, IMPORTANT_COLORS[1]);
             
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
@@ -730,7 +734,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
             
             var computerRoom = Random.choose(bounds.filter(isBackRoom));
@@ -829,7 +833,7 @@ function makeWorld() {
 
             color = ENV_COLORS[0];//Random.choose(BUILDING_COLORS);
             
-            building = makeBuilding(size.x, height, ENV_COLORS[0], ENV_COLORS[1]);
+            building = makeBuilding(size.x, height, size.z, ENV_COLORS[0], ENV_COLORS[1]);
             
             var bounds = flattenDegenerateTree(subdivide(
                 new THREE.Vector2(-size.x/2,-size.z/2), 
@@ -838,7 +842,7 @@ function makeWorld() {
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
-            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.x-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
+            var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
         }
         
@@ -854,50 +858,7 @@ function makeWorld() {
 
     });
     
-    
-    function makeRubble(diameter, color, backColor) {
-        var wD = 2;
-        var root = new THREE.Object3D();
-        var northC = makeBox(diameter, Random.real(10, 40), wD, color, backColor, true);
-        var southC = makeBox(diameter, Random.real(10, 40), wD, color, backColor, true);
-        var eastC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor, true);
-        var westC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor, true);
-        northC.position.z = -diameter/2 + wD/2;
-        southC.position.z = diameter/2 - wD/2;
-        eastC.position.x = diameter/2 - wD/2;
-        westC.position.x = -diameter/2 + wD/2;
-        eastC.rotation.y = Math.PI/2;
-        westC.rotation.y = Math.PI/2;
-        
-        northC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
-        southC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
-        eastC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
-        westC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
-
-        eastC.rotation.order = 'YXZ';
-        westC.rotation.order = 'YXZ';
-        
-        if(Math.random() > 0.6) {
-            obstacleNodes.push(northC);
-            root.add(northC);
-        }
-        if(Math.random() > 0.6) {
-            obstacleNodes.push(southC);
-            root.add(southC);
-        }
-        if(Math.random() > 0.6) {
-            obstacleNodes.push(eastC);
-            root.add(eastC);
-        }
-        if(Math.random() > 0.6) {
-            obstacleNodes.push(westC);
-            root.add(westC);
-        }
-        
-        return root;
-    }
-    
-    function makeBuilding(diameter, height, color, backColor) {
+    function makeBuilding(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
 
         var startHeight = 20;
@@ -909,10 +870,10 @@ function makeWorld() {
             var root = new THREE.Object3D();
             var north, south, east, west;
             
-            north = makeBox(diameter, height, 0.1, color, backColor);
-            south = makeWall(diameter, height, 0.1, color, backColor);
-            east = makeBox(diameter, height, 0.1, color, backColor);
-            west = makeBox(diameter, height, 0.1, color, backColor);
+            north = makeBox(width, height, 0.1, color, backColor);
+            south = makeWall(width, height, 0.1, color, backColor);
+            east = makeBox(depth, height, 0.1, color, backColor);
+            west = makeBox(depth, height, 0.1, color, backColor);
             
             
             door = makeBox(10, 20, 1.8, DOOR_COLORS[0], DOOR_COLORS[1]);
@@ -924,17 +885,17 @@ function makeWorld() {
             root.add(south);
             root.add(east);
             root.add(west);
-            north.position.z = -diameter/2;
-            south.position.z = diameter/2;
-            east.position.x = diameter/2 ;
-            west.position.x = -diameter/2;
+            north.position.z = -depth/2;
+            south.position.z = depth/2;
+            east.position.x = width/2 ;
+            west.position.x = -width/2;
             east.rotation.y = Math.PI/2;
             west.rotation.y = Math.PI/2;
 
-            var northC = makeBox(diameter, height, wD, color, backColor, true);
-            var southC = makeWall(diameter, height, wD, color, backColor, true);
-            var eastC = makeBox(diameter-wD*2, height, wD, color, backColor, true);
-            var westC = makeBox(diameter-wD*2, height, wD, color, backColor, true);
+            var northC = makeBox(width, height, wD, color, backColor, true);
+            var southC = makeWall(width, height, wD, color, backColor, true);
+            var eastC = makeBox(depth-wD*2, height, wD, color, backColor, true);
+            var westC = makeBox(depth-wD*2, height, wD, color, backColor, true);
             northC.visible = false;
             southC.visible = false;
             eastC.visible = false;
@@ -943,10 +904,10 @@ function makeWorld() {
             root.add(southC);
             root.add(eastC);
             root.add(westC);
-            northC.position.z = -diameter/2 + wD/2;
-            southC.position.z = diameter/2 - wD/2;
-            eastC.position.x = diameter/2 - wD/2;
-            westC.position.x = -diameter/2 + wD/2;
+            northC.position.z = -depth/2 + wD/2;
+            southC.position.z = depth/2 - wD/2;
+            eastC.position.x = width/2 - wD/2;
+            westC.position.x = -width/2 + wD/2;
             eastC.rotation.y = Math.PI/2;
             westC.rotation.y = Math.PI/2;
             obstacleNodes.push(northC);
@@ -957,18 +918,18 @@ function makeWorld() {
         })();
         root.add(groundFloor);
 
-        var interior = makeInterior(diameter-wD*2, ENV_COLORS[0], ENV_COLORS[1]);
+        var interior = makeInterior(width-wD*2, depth-wD*2, ENV_COLORS[0], ENV_COLORS[1]);
         root.add(interior);
         
         var top; 
         if(topHeight > 100) {
             if(Math.random() > 0.5) {
-                    top = makeTower(diameter, topHeight, diameter, color, backColor);
+                    top = makeTower(width, topHeight, depth, color, backColor);
             } else {
-                    top = makeModernBuilding(diameter, topHeight, diameter, color, backColor);
+                    top = makeModernBuilding(width, topHeight, depth, color, backColor);
             }
         } else {
-            top = makeSimpleBuilding(diameter, topHeight, diameter, color, backColor);
+            top = makeSimpleBuilding(width, topHeight, depth, color, backColor);
         }
                 
         top.position.y = startHeight;
@@ -995,14 +956,14 @@ function makeWorld() {
         return root;
     }
 
-    function makeInterior(diameter, color, backColor) {
+    function makeInterior(width, depth, color, backColor) {
         var root = new THREE.Object3D();
         var north, south, east, west;
         
-        north = makeBox(diameter, 20, 0.1, color, backColor);
-        south = makeWall(diameter, 20 - 0.1, 0.1, color, backColor);
-        east = makeBox(diameter, 20, 0.1, color, backColor);
-        west = makeBox(diameter, 20, 0.1, color, backColor);
+        north = makeBox(width, 20, 0.1, color, backColor);
+        south = makeWall(width, 20 - 0.1, 0.1, color, backColor);
+        east = makeBox(depth, 20, 0.1, color, backColor);
+        west = makeBox(depth, 20, 0.1, color, backColor);
         
         var jam = makeBox(0,20,2,color,backColor);
         jam.position.x = -5;
@@ -1018,14 +979,14 @@ function makeWorld() {
         root.add(south);
         root.add(east);
         root.add(west);
-        north.position.z = -diameter/2;
-        south.position.z = diameter/2;
-        east.position.x = diameter/2 ;
-        west.position.x = -diameter/2;
+        north.position.z = -depth/2;
+        south.position.z = depth/2;
+        east.position.x = width/2 ;
+        west.position.x = -width/2;
         east.rotation.y = Math.PI/2;
         west.rotation.y = Math.PI/2;
         
-        var cieling = makeBox(diameter, 0, diameter, color, backColor);
+        var cieling = makeBox(width, 0, depth, color, backColor);
         cieling.position.y = 20 - 0.1;
         root.add(cieling);
                 
