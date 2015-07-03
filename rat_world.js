@@ -19,7 +19,7 @@ function makeWorld() {
     var lookers = [];
     var healers = [];
     var masterComputer;
-        
+
     var NAMES = [
     'Rodriguez',
     'Garcia',
@@ -130,21 +130,21 @@ function makeWorld() {
 
     var map = new THREE.Object3D();
     map.rotation.x = Math.PI;
-        
+
     var REPAIRSHOP_DIST = 700;
-    
+
     var wD = 2;
-    var xBlocks = 3;
-    var zBlocks = 2;
-    var lotSize = 300;
+    var xBlocks = 4;
+    var zBlocks = 4;
+    var lotSize = 200;
     var roadSize = 100;
     var alleySize = 50;
     var sidewalkSize = 20;
     var xLots = 2;
-    var zLots = 3;
+    var zLots = 2;
     var heightFactor = 100;
     var heightPower = 1;
-        
+
     var world = new THREE.Object3D();
     var blockWidth = lotSize*xLots + roadSize;
     var blockDepth = lotSize*zLots + alleySize;
@@ -156,28 +156,28 @@ function makeWorld() {
     var southCoast = Random.choose([0,1000]);
     var landWidth = cityWidth+eastCoast+westCoast;
     var landDepth = cityDepth+northCoast+southCoast;
-        
+
     var landCenter = new THREE.Vector2(landWidth/2 - eastCoast, landDepth/2 - northCoast);
-        
+
     var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
     ocean.position.set(cityWidth/2, -10, cityDepth/2);
     ocean.name = 'ocean';
     world.add(ocean);
-    
+
     var pavement = makeBox(landWidth, 20, landDepth, null, gridTex);
     scaleUv(pavement.children[0].geometry, landWidth/8, landDepth/8);
     pavement.position.set(landCenter.x, -20, landCenter.y);
     world.add(pavement);
     obstacleNodes.push(pavement);
-    
+
     var PIER_SIZE = [100,30];
-    
+
     if(!northCoast) {
         var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
         pier.position.set(landCenter.x,-2,landCenter.y - landDepth/2 - PIER_SIZE[0]/2);
         world.add(pier);
         obstacleNodes.push(pier);
-        
+
         var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
         pier.position.set(landCenter.x,landCenter.y - landDepth/2 - PIER_SIZE[0]/2,0);
         map.add(pier);
@@ -187,7 +187,7 @@ function makeWorld() {
         pier.position.set(landCenter.x,-2,landCenter.y + landDepth/2 + PIER_SIZE[0]/2);
         world.add(pier);
         obstacleNodes.push(pier);
-        
+
         var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
         pier.position.set(landCenter.x,landCenter.y + landDepth/2 + PIER_SIZE[0]/2,0);
         map.add(pier);
@@ -197,7 +197,7 @@ function makeWorld() {
         pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,-2,landCenter.y);
         world.add(pier);
         obstacleNodes.push(pier);
-        
+
         var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
         pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,landCenter.y,0);
         map.add(pier);
@@ -207,12 +207,12 @@ function makeWorld() {
         pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,-2,landCenter.y);
         world.add(pier);
         obstacleNodes.push(pier);
-        
+
         var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
         pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,landCenter.y);
         map.add(pier);
     }
-    
+
     var intersections = {};
     for(var x = 0; x <= xBlocks; x++) {
         intersections[x] = {};
@@ -223,12 +223,12 @@ function makeWorld() {
             map.add(marker);*/
         }
     }
-    
+
 
     var lots = [];
     for(var bz = 0; bz < zBlocks; bz++) {
         for(var bx = 0; bx < xBlocks; bx++) {
-            var block = 
+            var block =
                 (function makeBlock(width, depth) {
                     var root = new THREE.Object3D();
                     var sidewalk = makeBox(width, 3, depth, ENV_COLORS[0], ENV_COLORS[1]);
@@ -236,9 +236,9 @@ function makeWorld() {
                     sidewalk.position.z = depth/2;
                     root.add(sidewalk);
                     obstacleNodes.push(sidewalk);
-                    
+
                     var lamps = [[-1,-1], [1,1], [-1,1], [1,-1]/*, [1,0], [-1,0]*/];
-                    
+
                     function makeLamp() {
                         var root = new THREE.Object3D();
                         var base = makeBox(2,10,2, ENV_COLORS[0], ENV_COLORS[1]);
@@ -252,14 +252,14 @@ function makeWorld() {
                         if(Math.random() > 0.75) {
                             root.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
                             root.rotation.z = Random.real(-Math.PI/6, Math.PI/6);
-                            if(Math.random() > 0.5) 
+                            if(Math.random() > 0.5)
                             root.remove(light);
                         }
                         obstacleNodes.push(root);
-                        
+
                         return root;
                     }
-                    
+
                     lamps.forEach(function(f){
                         var lamp = makeLamp();
                         lamp.position.y = 3;
@@ -276,14 +276,14 @@ function makeWorld() {
                 for(var lx = 0; lx < xLots; lx++) {
                     var lot = new THREE.Box3(
                         new THREE.Vector3(
-                            lx*lotSize,// + sidewalkSize, 
-                            3, 
-                            lz*lotSize// + sidewalkSize
-                        ), 
+                            lx*lotSize + sidewalkSize,
+                            3,
+                            lz*lotSize + sidewalkSize
+                        ),
                         new THREE.Vector3(
-                            (lx+1)*lotSize,// - sidewalkSize, 
+                            (lx+1)*lotSize - sidewalkSize,
                             103,
-                            (lz+1)*lotSize// - sidewalkSize
+                            (lz+1)*lotSize - sidewalkSize
                         )
                     );
                     lot.translate(block.position);
@@ -298,21 +298,21 @@ function makeWorld() {
             }
         }
     }
-    
+
     var repairShops = [];
-    
+
     Random.shuffle(lots);
 
     var radar = {
         name:'Radar',
         description:'See other robots on the GPS display.'
     };
-    
+
     var prgMap = {
         name:'Map',
         description:'Shows a map of the city on the GPS display.'
     };
-    
+
     var mcp = [
         {
             name:'MCP 1/3',
@@ -327,7 +327,7 @@ function makeWorld() {
             description:'Restore central control of city systems.'
         }
     ];
-        
+
     var mission = {
         name:'Mission',
         description:
@@ -345,13 +345,13 @@ function makeWorld() {
         radar,
         prgMap,
     ];
-        
+
 
     (function(){
         var shape = (function() {
             var body = new THREE.Object3D();
             var eye = new THREE.Object3D();
-            
+
             var top = makeBox(5,5,5, GOOD_COLORS[0], GOOD_COLORS[1]);
             pointify(top.children[0].geometry, 5, 1, 1);
             var bottom = makeBox(5,5,5, GOOD_COLORS[0], GOOD_COLORS[1]);
@@ -362,9 +362,9 @@ function makeWorld() {
 
             eye.add(top);
             eye.add(bottom);
-            
+
             var rotors = new THREE.Object3D();
-            
+
             for(var i = 0; i < 4; i++) {
                 var root = new THREE.Object3D();
                 var rotor = makeBox(10,1,5, GOOD_COLORS[0], GOOD_COLORS[1]);
@@ -376,13 +376,13 @@ function makeWorld() {
             rotors.position.y = 5;
             spinners.push(rotors);
             eye.add(rotors);
-            
+
             body.add(eye);
-            
+
             return {body:body,eye:eye};
         })();
         var id = shape.body.id;
-        
+
         var sx = Random.integer(0,xBlocks-1);
         var sz = Random.integer(0,zBlocks-1);
 
@@ -390,9 +390,9 @@ function makeWorld() {
         shape.body.position.add(intersections[sx][sz]);
         world.add(shape.body);
         var nick = 'Amelia';
-        
+
         colliders.push({
-            id:id, 
+            id:id,
             body:shape.body,
             radius:7,
             g:0,
@@ -400,7 +400,7 @@ function makeWorld() {
         });
         rogueBots.push({
             id:id,
-            body:shape.body, 
+            body:shape.body,
             eye:shape.eye,
             speed:200.0,
             vspeed:200.0,
@@ -410,10 +410,10 @@ function makeWorld() {
             name:'Flying Eye',
             nick:nick
         });
-        
+
         var high = 100;
         var low = 0;
-        
+
         pathers.push({
             id:id,
             body:shape.body,
@@ -425,15 +425,15 @@ function makeWorld() {
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz]),
                 new THREE.Vector3(0.0,low,0.0).add(intersections[sx][sz]),
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz]),
-            
+
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz+1]),
                 new THREE.Vector3(0.0,low,0.0).add(intersections[sx][sz+1]),
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx][sz+1]),
-            
+
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz+1]),
                 new THREE.Vector3(0.0,low,0.0).add(intersections[sx+1][sz+1]),
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz+1]),
-                
+
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz]),
                 new THREE.Vector3(0.0,low,0.0).add(intersections[sx+1][sz]),
                 new THREE.Vector3(0.0,high,0.0).add(intersections[sx+1][sz])
@@ -442,10 +442,10 @@ function makeWorld() {
         damageable.push({id:id, body:shape.body, damage:0});
         terminals.push({
             id:id,
-            name:nick, 
-            body:shape.body, 
-            contents:[], 
-            locked:true, 
+            name:nick,
+            body:shape.body,
+            contents:[],
+            locked:true,
             hasScreen:false/*,
             key:eyeKey*/
         });
@@ -456,10 +456,10 @@ function makeWorld() {
         var size = lot.space.size();
         var center = lot.space.center();
         center.y = lot.space.min.y;
-        
-        size.x = Random.integer(size.x/2, size.x);
-        size.z = Random.integer(size.z/2, size.z);
-        
+
+        size.x = Random.integer(100, size.x);
+        size.z = Random.integer(100, size.z);
+
         var building;
         var color;
         var nearest = repairShops.length? repairShops[0].center().distanceTo(center) : Number.MAX_VALUE;
@@ -469,34 +469,34 @@ function makeWorld() {
                 nearest = dist;
             }
         }
-        
+
         function isBackRoom(bound) {
             return bound.min.y <= wD - size.z/2;
         }
-        
+
         var facing = Random.choose(lot.facings);
-        
+
         if(lotIndex == 0) {
             var name = 'Central Processing'
 
             color = START_COLORS[0];
-            
+
             building = makeBuilding(size.x, 300, size.z, START_COLORS[0], START_COLORS[1]);
-            
+
             var bounds = flattenDegenerateTree(subdivide(
-                new THREE.Vector2(-size.x/2,-size.z/2), 
-                new THREE.Vector2(size.x/2, size.z/2), 
-                20, 
+                new THREE.Vector2(-size.x/2,-size.z/2),
+                new THREE.Vector2(size.x/2, size.z/2),
+                20,
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD*2, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
-                        
+
             var backRooms = bounds.filter(isBackRoom);
-            
+
             var computerRoom = backRooms[0];
-            
+
             var mainframe = makeMainframe();
             var c = computerRoom.center();
             mainframe.position.set(c.x, 0, computerRoom.min.y+wD/2);
@@ -505,9 +505,9 @@ function makeWorld() {
             masterComputer = mainframe.id;
             terminals.push({
                 id:mainframe.id,
-                body:mainframe, 
-                name:name, 
-                contents:[mission], 
+                body:mainframe,
+                name:name,
+                contents:[mission],
                 locked:false,
                 hasScreen:true,
                 readOnly: 1
@@ -516,7 +516,7 @@ function makeWorld() {
             startPos.applyAxisAngle(new THREE.Vector3(0,1,0), facing);//new THREE.Vector3(center.x+c.x,lot.space.min.y,c.y+center.z);
             startPos.add(center);
             startPos.y = lot.space.min.y;
-            
+
             (function(){
                 var shape = (function makeIgor() {
                     var root = new THREE.Object3D();
@@ -526,33 +526,33 @@ function makeWorld() {
                     head.rotation.y = Math.PI/4;
                     var eye = makeBox(2,1,1, SCREEN_COLORS[0], SCREEN_COLORS[1]);
                     var camera = new THREE.Object3D();
-                    
+
                     pointify(torso.children[0].geometry, 9, 0.5, 0.25);
                     pointify(base.children[0].geometry, 2, 0.25, 0.25);
                     pointify(head.children[0].geometry, 4, 1, 1);
                     torso.children[0].rotation.x = Math.PI;
-                    
+
                     torso.position.y = 2;
                     head.position.y = 2+7;
                     eye.position.y = 2+7+2;
                     eye.position.z = -1.5;
                     camera.position.y = 2+7+1;
-                    
+
                     root.add(base);
                     root.add(torso);
                     root.add(head);
                     root.add(eye);
                     root.add(camera);
-                    
+
                     return {body:root, eye:camera};
                 })();
-                
+
                 var id = shape.body.id;
-                
+
                 var nick = 'Conky';
-                
-                
-                
+
+
+
                 world.add(shape.body);
                 shape.body.position.copy(startPos);
                 bots.push({
@@ -560,24 +560,24 @@ function makeWorld() {
                     body:shape.body,
                     eye:shape.eye,
                     hacker:true,
-                    speed:75.0,
+                    speed:100.0,
                     vspeed:0.0,
-                    angSpeed:2.5,
+                    angSpeed:3,
                     spawn:startPos,
                     name:'Hacker',
                     nick:nick
                 });
-                
+
                 damageable.push({id:id, body:shape.body, damage:0});
                 terminals.push({
                     id:id,
-                    name:nick, 
-                    body:shape.body, 
-                    contents:[], 
+                    name:nick,
+                    body:shape.body,
+                    contents:[],
                     hasScreen:false
                 });
                 colliders.push({
-                    id:id, 
+                    id:id,
                     body:shape.body,
                     radius:4,
                     g:9.8,
@@ -596,30 +596,30 @@ function makeWorld() {
                     eye.position.y = 2;
                     eye.position.z = -2;
                     root.add(eye);
-                    
+
                     var camera = new THREE.Object3D();
                     root.add(camera);
                     camera.position.y = 5;
                     return {body:root, eye:camera};
                 })();
-                
+
                 var id = shape.body.id;
                 var nick = 'Jerry';
-                        
+
                 shape.body.position.copy(intersections[lot.bx][lot.bz]);
                 world.add(shape.body);
                 terminals.push({
                     id:id,
-                    name:nick, 
-                    body:shape.body, 
+                    name:nick,
+                    body:shape.body,
                     contents:[],
                     locked:true,
                     hasScreen:false
                 });
                 rogueBots.push({
                     id:id,
-                    body:shape.body, 
-                    eye:shape.eye, 
+                    body:shape.body,
+                    eye:shape.eye,
                     speed:200.0,
                     vspeed:0.0,
                     angSpeed:5.0,
@@ -629,7 +629,7 @@ function makeWorld() {
                     resetOwner:true
                 });
                 colliders.push({
-                    id:id, 
+                    id:id,
                     body:shape.body,
                     radius:3,
                     g:9.8,
@@ -639,7 +639,7 @@ function makeWorld() {
 
                 pathers.push({
                     id:id,
-                    body:shape.body, 
+                    body:shape.body,
                     face:true,
                     path:[
                         intersections[lot.bx][lot.bz],
@@ -651,12 +651,12 @@ function makeWorld() {
                     speed:40,
                     device:bot
                 });
-                
+
                 botMarkers.push({id:id, blip:makeMarker(), body:shape.body});
-                
+
             })();
 
-            
+
             var SPACING = 20;
             var MARGIN = 10;
             bounds.forEach(function(bound, i){
@@ -700,10 +700,10 @@ function makeWorld() {
                 }
             });
 
-            
-            
+
+
         } else if(nearest > REPAIRSHOP_DIST) {
-            color = REPAIR_COLORS[0];            
+            color = REPAIR_COLORS[0];
             building = makeBuilding(size.x, 30, size.z, REPAIR_COLORS[0], REPAIR_COLORS[1]);
             var layout = makeInnerLayout([new THREE.Box2(new THREE.Vector2(-size.x/2,-size.z/2), new THREE.Vector2(size.x/2, size.z/2))], size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
@@ -712,33 +712,33 @@ function makeWorld() {
             station.position.z = -size.z/2 + wD/2;
             building.add(station);
             healers.push(station);
-            
+
             repairShops.push(lot.space);
             name = Random.choose(NAMES.concat(BIG_ADJECTIVES)) + ' Robot Repair';
         } else if(programs.length > 0) {
             var height = Math.max(Random.normal(200, 300), 100);
             var name;
-            
+
             name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
             name += " Software";
             name += Random.choose(CORPORATIONS);
 
             color = IMPORTANT_COLORS[0];
-            
+
             building = makeBuilding(size.x, height, size.z, color, IMPORTANT_COLORS[1]);
-            
+
             var bounds = flattenDegenerateTree(subdivide(
-                new THREE.Vector2(-size.x/2,-size.z/2), 
-                new THREE.Vector2(size.x/2, size.z/2), 
-                20, 
+                new THREE.Vector2(-size.x/2,-size.z/2),
+                new THREE.Vector2(size.x/2, size.z/2),
+                20,
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
             building.add(layout);
-            
+
             var computerRoom = Random.choose(bounds.filter(isBackRoom));
-            
+
             var mainframe = makeMainframe();
             var c = computerRoom.center();
             mainframe.position.set(c.x, 0, computerRoom.min.y+wD/2);
@@ -746,14 +746,14 @@ function makeWorld() {
             obstacleNodes.push(mainframe);
             terminals.push({
                 id:mainframe.id,
-                body:mainframe, 
-                name:name, 
-                contents:[programs.pop()], 
+                body:mainframe,
+                name:name,
+                contents:[programs.pop()],
                 locked:true,
                 hasScreen:true,
                 readOnly: 1
             });
-            
+
             bounds.forEach(function(bound) {
                 var s = bound.size();
                 if(Math.abs(bound.min.y - computerRoom.max.y) < wD*2) {
@@ -774,7 +774,7 @@ function makeWorld() {
                     right.rotation.y = Math.PI/2;
                     building.add(right);
                     obstacleNodes.push(right);
-                    
+
                     if(s.y > 40) {
                         var left = spawnTurret(killBox, building);
                         left.position.x = bound.min.x + wD/2;
@@ -788,7 +788,7 @@ function makeWorld() {
                         right.rotation.y = Math.PI/2;
                         building.add(right);
                         obstacleNodes.push(right);
-                        
+
                         var left = spawnTurret(killBox, building);
                         left.position.x = bound.min.x + wD/2;
                         left.position.z = bound.max.y - wD/2 - 5;
@@ -818,9 +818,10 @@ function makeWorld() {
 
                 }
             });
-            
+
         } else {
-            var height = Math.max(Random.normal(200, 300), 30);
+
+            /*var height = Math.max(Random.normal(200, 300), 30);
             var name;
             if(height > 120) {
                 name = Random.choose(NAMES.concat(BIG_ADJECTIVES));
@@ -832,55 +833,108 @@ function makeWorld() {
             }
 
             color = ENV_COLORS[0];//Random.choose(BUILDING_COLORS);
-            
+
             building = makeBuilding(size.x, height, size.z, ENV_COLORS[0], ENV_COLORS[1]);
-            
+
             var bounds = flattenDegenerateTree(subdivide(
-                new THREE.Vector2(-size.x/2,-size.z/2), 
-                new THREE.Vector2(size.x/2, size.z/2), 
-                20, 
+                new THREE.Vector2(-size.x/2,-size.z/2),
+                new THREE.Vector2(size.x/2, size.z/2),
+                20,
                 false
             )).map(function(corners) {return shrink(wD/2, corners);});
 
             var layout = makeInnerLayout(bounds, size.x-wD*2, 20 - 0.1, size.z-wD, 2, ENV_COLORS[0], ENV_COLORS[1], height);
-            building.add(layout);
+            building.add(layout);*/
+            if(Math.random() > 0.05) {
+                building = makeRubble(size.x, ENV_COLORS[0], ENV_COLORS[1]);
+            } else {
+                building = makeBox(20,500,20, ENV_COLORS[0], ENV_COLORS[1]);
+                pointify(building.children[0].geometry, 500, 1, 1);
+                var light = makeBox(10, 10, 10, DANGER_COLORS[0], DANGER_COLORS[0]);
+                light.position.y = 500;
+                building.add(light);
+            }
         }
-        
+
         building.position.set(center.x, lot.space.min.y, center.z);
         building.rotation.y = facing;
         world.add(building);
-        
-        var sign = makeSign(name, 4, color);
+
+        /*var sign = makeSign(name, 4, color);
         sign.position.z = size.z/2 + 1;
         sign.position.x = -size.x/4;
         sign.position.y = 15;
-        building.add(sign);
+        building.add(sign);*/
+
 
     });
-    
+
+    function makeRubble(diameter, color, backColor) {
+        var wD = 2;
+        var root = new THREE.Object3D();
+        var northC = makeBox(diameter, Random.real(10, 40), wD, color, backColor);
+        var southC = makeBox(diameter, Random.real(10, 40), wD, color, backColor);
+        var eastC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor);
+        var westC = makeBox(diameter-wD*2, Random.real(10, 40), wD, color, backColor);
+        northC.position.z = -diameter/2 + wD/2;
+        southC.position.z = diameter/2 - wD/2;
+        eastC.position.x = diameter/2 - wD/2;
+        westC.position.x = -diameter/2 + wD/2;
+        eastC.rotation.y = Math.PI/2;
+        westC.rotation.y = Math.PI/2;
+
+        northC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        southC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        eastC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+        westC.rotation.x = Random.real(-Math.PI/6, Math.PI/6);
+
+        eastC.rotation.order = 'YXZ';
+        westC.rotation.order = 'YXZ';
+
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(northC);
+            root.add(northC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(southC);
+            root.add(southC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(eastC);
+            root.add(eastC);
+        }
+        if(Math.random() > 0.6) {
+            obstacleNodes.push(westC);
+            root.add(westC);
+        }
+
+        return root;
+    }
+
+
     function makeBuilding(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
 
         var startHeight = 20;
         var topHeight = height - startHeight;
-        
+
         var door;
         var groundFloor = (function() {
             var height = startHeight;
             var root = new THREE.Object3D();
             var north, south, east, west;
-            
+
             north = makeBox(width, height, 0.1, color, backColor);
             south = makeWall(width, height, 0.1, color, backColor);
             east = makeBox(depth, height, 0.1, color, backColor);
             west = makeBox(depth, height, 0.1, color, backColor);
-            
-            
+
+
             door = makeBox(10, 20, 1.8, DOOR_COLORS[0], DOOR_COLORS[1]);
             door.position.z = -1;
             doors.push(door);
             south.add(door);
-            
+
             root.add(north);
             root.add(south);
             root.add(east);
@@ -913,15 +967,15 @@ function makeWorld() {
             obstacleNodes.push(northC);
             obstacleNodes.push(eastC);
             obstacleNodes.push(westC);
-            
+
             return root;
         })();
         root.add(groundFloor);
 
         var interior = makeInterior(width-wD*2, depth-wD*2, ENV_COLORS[0], ENV_COLORS[1]);
         root.add(interior);
-        
-        var top; 
+
+        var top;
         if(topHeight > 100) {
             if(Math.random() > 0.5) {
                     top = makeTower(width, topHeight, depth, color, backColor);
@@ -931,14 +985,14 @@ function makeWorld() {
         } else {
             top = makeSimpleBuilding(width, topHeight, depth, color, backColor);
         }
-                
+
         top.position.y = startHeight;
         obstacleNodes.push(top);
         root.add(top);
-                
+
         return root;
     }
-    
+
     function makeWall(length, height, depth, color, backColor, solid) {
         var root = new THREE.Object3D();
         var left = makeBox(length/2 - 5, height, depth, color, backColor);
@@ -947,34 +1001,34 @@ function makeWorld() {
         right.position.x = length/4 + 2.5;
         root.add(left);
         root.add(right);
-        
+
         if(solid){
             obstacleNodes.push(left);
             obstacleNodes.push(right);
         }
-        
+
         return root;
     }
 
     function makeInterior(width, depth, color, backColor) {
         var root = new THREE.Object3D();
         var north, south, east, west;
-        
+
         north = makeBox(width, 20, 0.1, color, backColor);
         south = makeWall(width, 20 - 0.1, 0.1, color, backColor);
         east = makeBox(depth, 20, 0.1, color, backColor);
         west = makeBox(depth, 20, 0.1, color, backColor);
-        
+
         var jam = makeBox(0,20,2,color,backColor);
         jam.position.x = -5;
         jam.position.z = 1;
         south.add(jam);
-                
+
         var topjam = makeBox(10,0,2,color,backColor);
         topjam.position.y = 20 - 0.1;
         topjam.position.z = 1;
         south.add(topjam);
-        
+
         root.add(north);
         root.add(south);
         root.add(east);
@@ -985,25 +1039,25 @@ function makeWorld() {
         west.position.x = -width/2;
         east.rotation.y = Math.PI/2;
         west.rotation.y = Math.PI/2;
-        
+
         var cieling = makeBox(width, 0, depth, color, backColor);
         cieling.position.y = 20 - 0.1;
         root.add(cieling);
-                
+
         return root;
     }
-        
+
     function makeInnerLayout(bounds, width, height, depth, wallThickness, color, backColor, bh) {
         var root = new THREE.Object3D();
         var areas = bounds.map(cornersToCenterSize);
-        
+
         var backmostPos = 5000;
         bounds.forEach(function(bound) {
             backmostPos = Math.min(bound.min.y,backmostPos);
         });
-        
+
         var meta = {rooms:[], leafRooms:[], obj:root, size:new THREE.Vector3(width, height, depth), height:bh};
-        
+
         areas.forEach(function(area, i){
             var room = new THREE.Object3D();
             room.position.x = area.center.x;
@@ -1052,9 +1106,9 @@ function makeWorld() {
                 }
             }
         });
-        
+
         buildings.push(meta);
-        
+
         for(var i = 1; i < areas.length; i++) {
             var frontWall = makeWall(areas[i].size.x + wallThickness, height, wallThickness, color, backColor, true);
             frontWall.position.x = areas[i].center.x;
@@ -1064,10 +1118,10 @@ function makeWorld() {
             doors.push(door);
             frontWall.add(door);
         }
-        
+
         return root;
     }
-    
+
     function cornersToCenterSize(obj) {
         var min, max;
         min = obj.min;
@@ -1078,7 +1132,7 @@ function makeWorld() {
         center.add(min);
         return {center:center, size:size};
     }
-    
+
     function shrink(amount, corners) {
         corners.min.x += amount;
         corners.min.y += amount;
@@ -1086,7 +1140,7 @@ function makeWorld() {
         corners.max.y -= amount;
         return corners;
     }
-    
+
     function flattenDegenerateTree(tree) {
         while(Array.isArray(tree[tree.length-1])) {
             var item = tree.splice(tree.length-1, 1)[0];
@@ -1095,23 +1149,23 @@ function makeWorld() {
         }
         return tree;
     }
-    
+
     function subdivide(min, max, limit, useX) {
         var root = randSplit(min, max, limit, useX);
-        
+
         var subtree = 1;
         //if(useX && Math.random() > 0.5) subtree = 0;
-        
+
         useX = !useX;
         var v = new THREE.Vector2();
         v.subVectors(root[subtree].max, root[subtree].min);
         if(Math.abs(v.x) < limit*1.5 || Math.abs(v.y) < limit*1.5)
             return root;
-        
+
         root[1] = subdivide(root[subtree].min, root[subtree].max, limit, useX);
         return root;
     }
-    
+
     function randSplit(min, max, limit, useX) {
         if(useX) {
             var x = Random.real(min.x+limit,max.x-limit);
@@ -1127,7 +1181,7 @@ function makeWorld() {
             ];
         }
     }
-    
+
     function makeTower(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
         var bottom = 0;
@@ -1139,11 +1193,11 @@ function makeWorld() {
         var tierFraction = Random.integer(2,Math.max(2,Math.floor(height/10)));
         var pointy = Math.random() > 0.5;
         var hasCorners = Math.random() > 0.5;
-        
+
         var firstLedge = makeBox(width+ledgeHang, ledgeHeight, depth+ledgeHang, backColor, color);
         root.add(firstLedge);
         bottom = ledgeHeight;
-        
+
         var tiers = 0;
         while(true) {
             var remainingHeight = height-bottom;
@@ -1152,10 +1206,10 @@ function makeWorld() {
             var section = makeBox(width, sectionHeight, depth, color, backColor);
             section.position.y = bottom;
             root.add(section);
-            
+
             if(hasCorners) {
                 var corners = [];
-                
+
                 for(var i = 0; i < 4; i++) {
                     corners[i] = makeBox(ledgeHang/2, sectionHeight, ledgeHang/2, color, backColor);
                     corners[i].position.y = bottom;
@@ -1170,7 +1224,7 @@ function makeWorld() {
                 corners[2].position.z = -depth/2;
                 corners[3].position.z = -depth/2;
             }
-            
+
             bottom += sectionHeight;
             var ledge = makeBox(width+ledgeHang, ledgeHeight, depth+ledgeHang, backColor, color);
             ledge.position.y = bottom;
@@ -1198,16 +1252,16 @@ function makeWorld() {
         }
         return root;
     }
-    
+
     function makeModernBuilding(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
         var bottom = 0;
         var ledgeHeight = Random.integer(2,5);
         var ledgeHang = Random.integer(5,15);
-        
+
         var windowHeight = Random.integer(10, 30);
         var wallHeight = Random.integer(3,10);
-        
+
         while(bottom < height) {
             var window = makeBox(width, windowHeight, depth, ENV_COLORS[0], ENV_COLORS[1]);
             window.position.y = bottom;
@@ -1218,42 +1272,42 @@ function makeWorld() {
             bottom += wallHeight;
             root.add(upper);
         }
-        
+
         var cap = makeBox(width+ledgeHang, ledgeHeight, depth+ledgeHang, backColor, color);
         cap.position.y = bottom;
         root.add(cap);
-        
+
         return root;
     }
-    
+
     function makeSimpleBuilding(width, height, depth, color, backColor) {
         var root = new THREE.Object3D();
         var bottom = 0;
         var ledgeHeight = Random.integer(2,10);
         var ledgeHang = Random.integer(5,15);
-                
+
         var main = makeBox(width, height-ledgeHeight, depth, color, backColor);
         root.add(main);
-        
+
         var cap = makeBox(width+ledgeHang, ledgeHeight, depth+ledgeHang, backColor, color);
         cap.position.y = height-ledgeHeight;
         root.add(cap);
-        
+
         return root;
     }
-    
-    
+
+
     var land = makeLineBox(landWidth, landDepth, SCREEN_COLORS[0], null);
     land.position.set(landCenter.x, landCenter.y, 0);
     map.add(land);
-    
+
     var mapbg = makeLineBox(cityWidth+2000, cityDepth+2000, SCREEN_COLORS[0], null);
     mapbg.position.set(cityWidth/2, cityDepth/2, 0);
-    
+
     map.add(mapbg);
-    
+
     var mapDetail = new THREE.Object3D();
-    
+
     world.updateMatrixWorld();
     obstacles = obstacleNodes.map(function(wall){
         //var bbox = new THREE.BoundingBoxHelper(wall, 0xaa88ff);
@@ -1285,38 +1339,38 @@ function makeWorld() {
     });
     map.add(mapDetail);
     map.scale.set(1/Math.max(cityWidth+2000, cityDepth+2000), 1/Math.max(cityWidth+2000, cityDepth+2000), 1);
-    
-    
+
+
     function spawnTurret(killBox, ref) {
         var root = new THREE.Object3D();
         var bottom = 0;
-        
+
         var base = makeBox(5,10,5, DANGER_COLORS[0], DANGER_COLORS[1]);
         pointify(base.children[0].geometry, 10, 0.5, 0.5);
         root.add(base);
         bottom += 10;
-        
+
         var head = makeBox(5,3,5, DANGER_COLORS[0], DANGER_COLORS[1]);
         head.position.y = bottom;
         root.add(head);
         bottom += 3;
-        
+
         var gun = makeBox(1,1,3, DANGER_COLORS[0], DANGER_COLORS[1]);
         head.add(gun);
         gun.position.z = -5/2 - 3/2;
         gun.position.y = 1;
-        
-        
+
+
         shooters.push({id:head.id, gun:head, cooldown:0, killBox:killBox, direction:1, ref:ref});
         damageable.push({id:head.id, damage:0, body:head});
-        
+
         var whole = new THREE.Object3D();
         root.position.z = -5/2;
         whole.add(root);
-        
+
         return whole;
     }
-    
+
     function makeMarker() {
         var box = makeBox(50,50,1,SCREEN_COLORS[0],SCREEN_COLORS[0]);
         box.children[0].position.y = 0;
@@ -1325,19 +1379,19 @@ function makeWorld() {
 
     function makeGuard() {
         var root = new THREE.Object3D();
-        
+
         var torso = makeBox(7,8,5, 0xff0000, 0x888888);
         pointify(torso.children[0].geometry, 10, 0.5, 0.5);
         torso.children[0].rotation.x = Math.PI;
         root.add(torso);
-        
+
         var gun = makeBox(3,3,3, 0xff0000, 0x880000);
         pointify(gun.children[0].geometry, 3, 0, 1);
         gun.children[0].rotation.x = Math.PI*1/8;
         gun.position.z = -2;
         gun.position.y = 2;
         root.add(gun);
-        
+
         var head = makeBox(7,3,5, 0xff0000, 0x880000);
         pointify(head.children[0].geometry, 3, 0.5, 0.5);
         head.position.y = 8;
@@ -1351,31 +1405,31 @@ function makeWorld() {
 
         root.add(eye);
         root.add(camera);
-        
+
         return {body:root, eye:camera};
     }
 
 
-        
+
     botMarkers.forEach(function(marker){
         map.add(marker.blip);
     });
-        
+
     var safeZone = new THREE.Box3(new THREE.Vector3(0,-30,0), new THREE.Vector3(cityWidth+200, 500, cityDepth+200));
 
     var mapAdjusted = new THREE.Object3D();
     mapAdjusted.add(map);
     map.position.y = 0.70;
     map.position.x = 0.25;
-    
+
     return {
-        doors:doors, 
-        world:world, 
-        buildings:buildings, 
-        intersections:intersections, 
-        portalDoors:portalDoors, 
-        obstacles:obstacles, 
-        map:mapAdjusted, 
+        doors:doors,
+        world:world,
+        buildings:buildings,
+        intersections:intersections,
+        portalDoors:portalDoors,
+        obstacles:obstacles,
+        map:mapAdjusted,
         botMarkers:botMarkers,
         spinners:spinners,
         terminals:terminals,
