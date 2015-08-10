@@ -134,14 +134,14 @@ function makeWorld() {
     var REPAIRSHOP_DIST = 700;
 
     var wD = 2;
-    var xBlocks = 4;
-    var zBlocks = 4;
+    var xBlocks = 2;
+    var zBlocks = 2;
     var lotSize = 200;
-    var roadSize = 100;
-    var alleySize = 50;
-    var sidewalkSize = 20;
-    var xLots = 2;
-    var zLots = 2;
+    var roadSize = 40;
+    var alleySize = 40;
+    var sidewalkSize = 15;
+    var xLots = 3;
+    var zLots = 3;
     var heightFactor = 100;
     var heightPower = 1;
 
@@ -150,68 +150,20 @@ function makeWorld() {
     var blockDepth = lotSize*zLots + alleySize;
     var cityWidth = xBlocks*blockWidth + roadSize;
     var cityDepth = zBlocks*blockDepth + alleySize;
-    var eastCoast = Random.choose([0,1000]);
-    var westCoast = Random.choose([0,1000]);
-    var northCoast = Random.choose([0,1000]);
-    var southCoast = Random.choose([0,1000]);
+    var eastCoast = 500;
+    var westCoast = 500;
+    var northCoast = 500;
+    var southCoast = 500;
     var landWidth = cityWidth+eastCoast+westCoast;
     var landDepth = cityDepth+northCoast+southCoast;
 
     var landCenter = new THREE.Vector2(landWidth/2 - eastCoast, landDepth/2 - northCoast);
-
-    var ocean = makeBox(cityWidth + 2000, 0, cityDepth + 2000, 0x000022, 0x000022);
-    ocean.position.set(cityWidth/2, -10, cityDepth/2);
-    ocean.name = 'ocean';
-    world.add(ocean);
 
     var pavement = makeBox(landWidth, 20, landDepth, null, gridTex);
     scaleUv(pavement.children[0].geometry, landWidth/8, landDepth/8);
     pavement.position.set(landCenter.x, -20, landCenter.y);
     world.add(pavement);
     obstacleNodes.push(pavement);
-
-    var PIER_SIZE = [100,30];
-
-    if(!northCoast) {
-        var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
-        pier.position.set(landCenter.x,-2,landCenter.y - landDepth/2 - PIER_SIZE[0]/2);
-        world.add(pier);
-        obstacleNodes.push(pier);
-
-        var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
-        pier.position.set(landCenter.x,landCenter.y - landDepth/2 - PIER_SIZE[0]/2,0);
-        map.add(pier);
-    }
-    if(!southCoast) {
-        var pier = makeBox(PIER_SIZE[1],2,PIER_SIZE[0], ENV_COLORS[0], ENV_COLORS[1]);
-        pier.position.set(landCenter.x,-2,landCenter.y + landDepth/2 + PIER_SIZE[0]/2);
-        world.add(pier);
-        obstacleNodes.push(pier);
-
-        var pier = makeLineBox(PIER_SIZE[1],PIER_SIZE[0], SCREEN_COLORS[0]);
-        pier.position.set(landCenter.x,landCenter.y + landDepth/2 + PIER_SIZE[0]/2,0);
-        map.add(pier);
-    }
-    if(!eastCoast) {
-        var pier = makeBox(PIER_SIZE[0],2,PIER_SIZE[1], ENV_COLORS[0], ENV_COLORS[1]);
-        pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,-2,landCenter.y);
-        world.add(pier);
-        obstacleNodes.push(pier);
-
-        var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
-        pier.position.set(landCenter.x - landWidth/2 - PIER_SIZE[0]/2,landCenter.y,0);
-        map.add(pier);
-    }
-    if(!westCoast) {
-        var pier = makeBox(PIER_SIZE[0],2,PIER_SIZE[1], ENV_COLORS[0], ENV_COLORS[1]);
-        pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,-2,landCenter.y);
-        world.add(pier);
-        obstacleNodes.push(pier);
-
-        var pier = makeLineBox(PIER_SIZE[0],PIER_SIZE[1], SCREEN_COLORS[0]);
-        pier.position.set(landCenter.x + landWidth/2 + PIER_SIZE[0]/2,landCenter.y);
-        map.add(pier);
-    }
 
     var intersections = {};
     for(var x = 0; x <= xBlocks; x++) {
@@ -1296,12 +1248,7 @@ function makeWorld() {
         return root;
     }
 
-
-    var land = makeLineBox(landWidth, landDepth, SCREEN_COLORS[0], null);
-    land.position.set(landCenter.x, landCenter.y, 0);
-    map.add(land);
-
-    var mapbg = makeLineBox(cityWidth+2000, cityDepth+2000, SCREEN_COLORS[0], null);
+    var mapbg = makeLineBox(cityWidth, cityDepth, SCREEN_COLORS[0], null);
     mapbg.position.set(cityWidth/2, cityDepth/2, 0);
 
     map.add(mapbg);
@@ -1338,7 +1285,7 @@ function makeWorld() {
         mapDetail.add(box);
     });
     map.add(mapDetail);
-    map.scale.set(1/Math.max(cityWidth+2000, cityDepth+2000), 1/Math.max(cityWidth+2000, cityDepth+2000), 1);
+    map.scale.set(1/Math.max(cityWidth, cityDepth), 1/Math.max(cityWidth, cityDepth), 1);
 
 
     function spawnTurret(killBox, ref) {
@@ -1419,8 +1366,8 @@ function makeWorld() {
 
     var mapAdjusted = new THREE.Object3D();
     mapAdjusted.add(map);
-    map.position.y = 0.70;
-    map.position.x = 0.25;
+    map.position.y = 0.5;
+    //map.position.x = 0.2;
 
     return {
         doors:doors,
